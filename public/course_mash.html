@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COURSEMASH — Brown Spring 2026</title>
+<style>
+  :root{
+    --brown:#4E3629;
+    --brown-dark:#2b1d15;
+    --red:#990000;
+    --paper:#FFFFFF;
+    --ink:#000000;
+    --ink-dim:#5a5a5a;
+    --line:#d6d6d6;
+    --gold:#D9A441;
+    --chrome:#ECECEC;
+    --chrome-dark:#C9C9C9;
+    --sysfont: Arial, Helvetica, 'Segoe UI', Roboto, sans-serif;
+    --monofont: Consolas, Monaco, 'Courier New', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:#DADADA;color:var(--ink);font-family:var(--sysfont);min-height:100vh;}
+  .frame{max-width:780px;margin:0 auto;background:var(--paper);min-height:100vh;box-shadow:0 0 0 1px var(--chrome-dark);}
+  .wrap{max-width:720px;margin:0 auto;padding:0 18px 28px;}
+
+  /* ---- faux browser chrome, echoing the mock-up ---- */
+  .chrome{background:var(--chrome);border-bottom:1px solid var(--chrome-dark);padding:8px 12px;}
+  .chrome-row{display:flex;align-items:center;gap:8px;}
+  .chrome-dots{display:flex;gap:6px;flex-shrink:0;}
+  .chrome-dots span{width:9px;height:9px;border-radius:50%;background:#bdbdbd;display:inline-block;}
+  .chrome-bar{flex:1;background:#fff;border:1px solid var(--chrome-dark);border-radius:3px;padding:4px 10px;font-family:var(--monofont);font-size:11px;color:#444;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+  .chrome-bar i{color:#999;font-size:10px;}
+
+  .titlebar{background:var(--chrome);padding:5px 0;border-bottom:1px solid var(--chrome-dark);}
+  .titlebar-inner{max-width:720px;margin:0 auto;padding:0 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  .titlebar .menu{font-family:var(--sysfont);font-size:11px;color:#777;letter-spacing:0.01em;}
+  .titlebar .menu span{margin-right:14px;}
+  .titlebar .tag{font-family:var(--monofont);font-size:10px;color:#888;letter-spacing:0.04em;text-transform:uppercase;}
+
+  /* flat solid banner, no gradients */
+  .redbar{position:relative;background:var(--red);border-bottom:3px solid var(--brown-dark);padding:26px 0 24px;text-align:center;}
+  .logo{font-family:var(--sysfont);font-weight:800;font-size:44px;text-transform:uppercase;color:#fff;letter-spacing:0.01em;margin:0;}
+
+  .tagline{
+    text-align:center;font-family:var(--sysfont);font-weight:600;font-style:italic;
+    color:var(--ink);font-size:13px;line-height:1.55;max-width:540px;margin:20px auto 4px;padding:0 10px;
+  }
+  .prompt{
+    text-align:center;font-weight:700;font-style:italic;font-size:15px;
+    font-family:var(--sysfont);margin:6px 0 22px;color:var(--ink);
+  }
+
+  .tabs{display:flex;justify-content:center;gap:14px;margin:0 0 0;padding-bottom:10px;border-bottom:1px solid var(--line);font-family:var(--sysfont);}
+  .tab{font-size:13px;font-weight:700;background:transparent;border:none;color:var(--ink-dim);padding:2px 0;cursor:pointer;text-decoration:underline;}
+  .tab.active{color:var(--red);}
+  .tab:not(.active):hover{color:var(--ink);}
+
+  .arena{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:14px;margin-top:22px;}
+  .or-badge{align-self:center;font-family:var(--sysfont);font-weight:800;color:var(--red);font-size:16px;text-transform:uppercase;}
+  .card{background:var(--paper);border:1px solid #ccc;border-radius:6px;overflow:hidden;cursor:pointer;transition:transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease;display:flex;flex-direction:column;}
+  .card:hover{transform:translateY(-2px);border-color:var(--red);box-shadow:0 4px 14px rgba(0,0,0,0.08);}
+  .card:active{transform:translateY(0);}
+  .card.winner{box-shadow:0 0 0 3px var(--gold);}
+  .card.loser{opacity:0.4;}
+  .card.disabled{pointer-events:none;}
+
+  .plate{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;padding:26px 16px 4px;}
+  .plate .icon{width:56px;height:56px;margin-bottom:14px;}
+  .plate .icon svg{width:100%;height:100%;display:block;}
+  .plate .code{font-family:var(--sysfont);font-weight:800;font-size:26px;letter-spacing:0.01em;color:var(--red);}
+
+  .card-body{padding:6px 20px 20px;flex:1;display:flex;flex-direction:column;}
+  .card-title{font-family:var(--sysfont);font-weight:700;font-size:16px;line-height:1.32;color:var(--ink);text-align:center;margin:2px 0 14px;}
+  .card-facts{font-size:12.5px;color:var(--ink);border-top:1px dashed var(--line);padding-top:12px;line-height:2;font-family:var(--sysfont);margin-top:auto;}
+  .card-facts span{display:block;}
+  .card-facts b{color:var(--ink);font-weight:700;}
+
+  .stats-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:28px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-family:var(--monofont);}
+  .stat-cell{text-align:center;}
+  .stat-num{display:block;font-family:var(--sysfont);font-size:19px;color:var(--red);font-weight:800;line-height:1.1;}
+  .stat-label{display:block;font-size:9.5px;color:var(--ink-dim);letter-spacing:0.08em;text-transform:uppercase;margin-top:3px;}
+
+  .hint{text-align:center;margin-top:14px;font-size:11.5px;color:var(--ink-dim);font-family:var(--monofont);}
+  .safe-note{text-align:center;margin-top:6px;font-size:10.5px;color:#9a9a9a;line-height:1.6;}
+
+  /* leaderboard — rank position only; the underlying rating score is never rendered */
+  .board{display:none;margin-top:22px;}
+  .board.active{display:block;}
+  .search{width:100%;padding:10px 12px;font-size:13px;border:1px solid var(--line);border-radius:3px;margin-bottom:14px;font-family:var(--sysfont);background:var(--paper);color:var(--ink);}
+  .search:focus{outline:2px solid var(--red);outline-offset:-1px;}
+  .board-head{display:grid;grid-template-columns:36px 1fr;gap:10px;padding:0 12px 8px;font-size:10.5px;color:var(--ink-dim);letter-spacing:0.08em;text-transform:uppercase;border-bottom:2px solid var(--brown);}
+  .board-row{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--line);}
+  .board-row:nth-child(odd){background:rgba(0,0,0,0.02);}
+  .rank{font-family:var(--sysfont);font-weight:700;font-style:italic;font-size:16px;color:var(--ink-dim);}
+  .rank.r1{color:var(--red);}
+  .rank.r2{color:var(--brown);}
+  .rank.r3{color:#9a6b3f;}
+  .btitle{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.3;}
+  .bsub{font-family:var(--monofont);font-size:10.5px;color:var(--ink-dim);margin-top:3px;}
+  .board-note{text-align:center;color:var(--ink-dim);font-size:11px;margin-top:20px;line-height:1.7;}
+  .loading{text-align:center;padding:50px 0;color:var(--ink-dim);font-size:13px;}
+  .empty{text-align:center;padding:30px 0;color:var(--ink-dim);font-size:13px;}
+
+  /* ---- footer ---- */
+  .sitefoot{border-top:1px solid var(--chrome-dark);background:var(--chrome);padding:12px 18px;}
+  .sitefoot-inner{max-width:720px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;font-family:var(--monofont);font-size:10.5px;color:var(--ink-dim);}
+  .sitefoot-stats span{margin-right:12px;}
+  .sitefoot-links{display:flex;gap:12px;flex-wrap:wrap;}
+  .sitefoot-links button{font-family:var(--monofont);font-size:10.5px;color:var(--brown);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline;}
+  .sitefoot-links button:hover{color:var(--red);}
+  .sitefoot-disclaimer{max-width:720px;margin:8px auto 0;text-align:center;font-size:10px;color:#9a9a9a;font-family:var(--sysfont);line-height:1.6;}
+
+  /* ---- info dialogs ---- */
+  dialog.info{border:1px solid var(--chrome-dark);border-radius:5px;padding:0;max-width:440px;width:90vw;box-shadow:0 8px 30px rgba(0,0,0,0.25);}
+  dialog.info::backdrop{background:rgba(20,12,8,0.45);}
+  dialog.info .dhead{background:var(--brown);color:#fff;padding:12px 16px;font-family:var(--sysfont);font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;}
+  dialog.info .dhead button{background:none;border:none;color:#fff;font-size:16px;cursor:pointer;line-height:1;opacity:0.85;}
+  dialog.info .dhead button:hover{opacity:1;}
+  dialog.info .dbody{padding:16px;font-family:var(--sysfont);font-size:12.5px;color:var(--ink);line-height:1.65;}
+  dialog.info .dbody p{margin:0 0 10px;}
+  dialog.info .dbody p:last-child{margin-bottom:0;}
+  dialog.info .dbody ul{margin:0 0 10px;padding-left:18px;}
+  dialog.info .dbody li{margin-bottom:4px;}
+
+  @media (max-width:600px){
+    .arena{grid-template-columns:1fr;}
+    .or-badge{margin:2px auto;}
+    .logo{font-size:32px;}
+    .board-head{grid-template-columns:28px 1fr;}
+    .stats-strip{grid-template-columns:repeat(2,1fr);row-gap:14px;}
+    .titlebar .menu span{margin-right:9px;}
+  }
+  @media (prefers-reduced-motion: reduce){*{transition:none !important;}}
+  :focus-visible{outline:2px solid var(--red);outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<div class="frame">
+<div class="chrome">
+  <div class="chrome-row">
+    <div class="chrome-dots"><span></span><span></span><span></span></div>
+    <div class="chrome-bar"><span>coursemash.brown.edu</span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div>
+  </div>
+</div>
+<div class="titlebar">
+  <div class="titlebar-inner">
+    <span class="menu"><span>File</span><span>Edit</span><span>View</span><span>Favorites</span><span>Tools</span><span>Help</span></span>
+    <span class="tag">Brown · Spring 2026 · Undergrad</span>
+  </div>
+</div>
+<div class="redbar">
+  <h1 class="logo">Coursemash</h1>
+</div>
+
+<div class="wrap">
+  <p class="tagline">Do we have the same courses? No. Will we judge anyways? Every single one.</p>
+  <p class="prompt">Which Course Wins? Click to Choose.</p>
+
+  <div class="tabs">
+    <button class="tab active" id="tabVote">Vote</button>
+    <button class="tab" id="tabBoard">Leaderboard</button>
+  </div>
+
+  <div id="voteView">
+    <div id="arenaHost" class="loading">loading matchup…</div>
+    <div class="stats-strip" id="statsStrip"></div>
+    <p class="hint">Votes are shared across everyone using this page.</p>
+    <p class="safe-note">Anonymous by design — no names, accounts, sign-ins, or personal data are ever collected.<br>Course listings are for identification only and may not reflect current offerings.</p>
+  </div>
+
+  <div id="boardView" class="board">
+    <input class="search" id="boardSearch" type="text" placeholder="Search by course, subject, or instructor…">
+    <div class="board-head"><span>#</span><span>Course</span></div>
+    <div id="boardHost"></div>
+    <div class="board-note" id="boardNote"></div>
+  </div>
+</div>
+
+<div class="sitefoot">
+  <div class="sitefoot-inner">
+    <div class="sitefoot-stats"><span id="footMatchups">0 matchups</span><span id="footCourseCount">0 courses</span><span id="footSync">live</span></div>
+    <div class="sitefoot-links">
+      <button type="button" id="linkLeaderboard">Leaderboard</button>
+      <button type="button" id="linkMethodology">Methodology</button>
+      <button type="button" id="linkPrivacy">Privacy</button>
+      <button type="button" id="linkAbout">About</button>
+    </div>
+  </div>
+  <p class="sitefoot-disclaimer">Coursemash is for entertainment. Rankings reflect anonymous student voting and are not an official Brown University ranking or evaluation. Not affiliated with or endorsed by Brown University.</p>
+</div>
+</div>
+
+<dialog class="info" id="dlgAbout">
+  <div class="dhead"><span>About Coursemash</span><button type="button" data-close-dialog>&times;</button></div>
+  <div class="dbody">
+    <p>Coursemash turns the Brown course catalog into a head-to-head popularity vote. Pick whichever course sounds better and the leaderboard slowly sorts itself out.</p>
+    <p>It's just for fun — a way to browse the catalog, not a substitute for official academic advising or the registrar.</p>
+  </div>
+</dialog>
+
+<dialog class="info" id="dlgMethodology">
+  <div class="dhead"><span>How ranking works</span><button type="button" data-close-dialog>&times;</button></div>
+  <div class="dbody">
+    <p>Every matchup is scored with the Elo rating system, the same method used to rank chess players:</p>
+    <ul>
+      <li>Each course starts on equal footing.</li>
+      <li>Winning a matchup nudges a course's rating up; losing nudges it down.</li>
+      <li>Beating a course that's currently ranked higher moves the rating more than beating one ranked lower — an upset counts for more.</li>
+      <li>Matchups favor courses with fewer votes so far, so the whole catalog gets a fair number of head-to-heads instead of a handful of courses hogging attention.</li>
+    </ul>
+    <p>Only each course's rank position is ever shown — the underlying rating number stays behind the scenes.</p>
+  </div>
+</dialog>
+
+<dialog class="info" id="dlgPrivacy">
+  <div class="dhead"><span>Privacy</span><button type="button" data-close-dialog>&times;</button></div>
+  <div class="dbody">
+    <p>Coursemash doesn't ask who you are, and it doesn't want to know:</p>
+    <ul>
+      <li>No accounts, sign-ins, cookies, or device fingerprinting.</li>
+      <li>The only thing saved is which course beat which course — never who voted.</li>
+      <li>Vote totals are shared across everyone using the page so the leaderboard reflects the whole crowd.</li>
+    </ul>
+    <p>If you spot unexpected behavior, the safest move is to close the tab — nothing personal was ever stored to begin with.</p>
+  </div>
+</dialog>
+
+<script>
+const COURSES_RAW = [["AFRI0370","AFRI","0370","African American Novels of the 1970s","M 3-5:30p","M. Ajibade"],["AFRI0411","AFRI","0411","Reading Revolt: Blackness, Politics, and Morality","T 4-6:30p","M. Thompson"],["AFRI0510","AFRI","0510","Love Stories in African Literature and Film","TTh 2:30-3:50p","M. Ajibade"],["AFRI0551","AFRI","0551","Bodies, Race, and Resistance: Africana Perspectives on Health Inequality","TTh 10:30-11:50a","K. Gallon"],["AFRI0610","AFRI","0610","Black Student Protest from Jim Crow to the Present","TTh 9-10:20a","M. Guterl"],["AFRI0990","AFRI","0990","Black Lavender: Black Gay/Lesbian Plays/Dramatic Constructions in the American Theatre","F 3-5:30p","S. Robinson"],["AFRI1050E","AFRI","1050E","Performing the Black Arts Movement","TTh 1-2:20p","L. Biggs"],["AFRI1090A","AFRI","1090A","The Civil Rights Movement","TTh 2:30-3:50p","F. Hamlin"],["AFRI1212","AFRI","1212","Rethinking ‘Black Music’?","T 4-6:30p","Z. Kent-Smith"],["AFRI1360","AFRI","1360","Africana Studies: Knowledge, Texts and Methodology","Th 4-6:30p","B. Meeks"],["AFRI1441","AFRI","1441","Caribbean and Latin American Migration: Race, Gender, Community","W 3-5:30p","P. Lewis"],["AFRI1651","AFRI","1651","The Other African Americans? Comparative Perspectives on Black Ethnic Diversity","TTh 9-10:20a","D. Wallace"],["SIGN0100","SIGN","0100","American Sign Language I, II","MWF 11-11:50a","H. Nowicki"],["SIGN0400","SIGN","0400","American Sign Language IV","MWF 12-12:50p","H. Nowicki"],["SIGN0610","SIGN","0610","American Sign Language VI","MWF 1-1:50p","H. Nowicki"],["SIGN1910","SIGN","1910","Independent Study in Sign Language/Deaf Studies","TBA","T. Riker"],["AMST0150T","AMST","0150T","Latina Popular Culture","F 3-5:30p","F. Salinas-Moniz"],["AMST0192T","AMST","0192T","Trans*formative Ecologies","TTh 6:40-8p","I. Essex"],["AMST0192U","AMST","0192U","What’s Queer about Queer Media Now?","TTh 9-10:20a","K. Marks"],["AMST0192V","AMST","0192V","The Art and Politics of Psychedelia","TTh 2:30-3:50p","L. Dean-Johnson"],["AMST0601H","AMST","0601H","Sounding Out America","MWF 10-10:50a","K. Miller"],["ANTH0066L","ANTH","0066L","Beyond World Music: Singing and Language","T 4-6:30p","B. Salinas"],["ANTH0077A","ANTH","0077A","Visual Anthropology","TTh 10:30-11:50a","R. Carter"],["ANTH0300","ANTH","0300","Culture and Health","MW 11-11:50a","K. Mason"],["ANTH1010","ANTH","1010","Applied Anthropology","MWF 12-12:50p","L. DiCarlo"],["ANTH1201","ANTH","1201","Introduction to Geographic Information Systems and Spatial Analysis","TTh 9-10:20a","VanValkenburgh/Horseman"],["ANTH1215","ANTH","1215","The Anthropology of Aging","M 3-5:30p","L. DiCarlo"],["ANTH1225","ANTH","1225","Gendering Migration and Diasporas","W 3-5:30p","Al-Ali/May"],["ANTH1328","ANTH","1328","The Anthropology of Capitalism: Gender, Race, Kinship","T 4-6:30p","Wolff/Seth"],["ANTH1555","ANTH","1555","Environmental Anthropology","TTh 9-10:20a","Zhang/Aguirre"],["ANTH1560","ANTH","1560","Environmental Archaeology: Sustainability, Catastrophe, and Resilience","TTh 2:30-3:50p","Morell-Hart/Thimmig"],["ANTH1720","ANTH","1720","The Human Skeleton","MWF 2-2:50p","A. Scherer"],["ANTH1805","ANTH","1805","Language and Desire","TTh 2:30-3:50p","Babcock/Lee"],["ANTH1930","ANTH","1930","Anthropology Thesis Workshop","F 9-11:30a","P. Van Dommelen"],["ANTH1940","ANTH","1940","Ethnographic Research Methods","Th 4-6:30p","R. Carter"],["ANTH1960","ANTH","1960","Anthropology of Infrastructure: Comparative Ethnographic Perspectives","Th 4-6:30p","D. Smith"],["ANTH1990","ANTH","1990","Senior Seminar: (Re)Making Anthropology","TTh 10:30-11:50a","D. Smith"],["APMA0200","APMA","0200","Introduction to Modeling","MWF 1-1:50p","J. Darbon"],["APMA0350","APMA","0350","Applied Ordinary Differential Equations","MWF 12-12:50p","P. Tabrizian"],["APMA0360","APMA","0360","Applied Partial Differential Equations I","MWF 12-12:50p","R. Creedon"],["APMA0650","APMA","0650","Introduction to Probability and Statistics","TTh 1-2:20p","V. Khurana"],["APMA1070","APMA","1070","Quantitative Models of Biological Systems","MWF 10-10:50a","E. Kharazmi"],["APMA1160","APMA","1160","An Introduction to Numerical Optimization","MWF 9-9:50a","J. Darbon"],["APMA1200","APMA","1200","Operations Research: Probabilistic Models","TTh 10:30-11:50a","V. Semenov"],["APMA1360","APMA","1360","Applied Dynamical Systems","MWF 9-9:50a","K. Mallory"],["APMA1650","APMA","1650","Introduction to Probability and Statistics with Calculus","MWF 11-11:50a","A. Culiuc"],["APMA1655","APMA","1655","Introduction to Probability and Statistics with Theory","MWF 2-2:50p","H. Wang"],["APMA1660","APMA","1660","Statistical Inference II","MWF 11-11:50a","A. Vander Werf"],["APMA1740","APMA","1740","Recent Applications of Probability and Statistics","TTh 10:30-11:50a","O. Nguyen"],["APMA1941I","APMA","1941I","Enumerative Combinatorics","TTh 2:30-3:50p","S. Brauner"],["APMA1941J","APMA","1941J","Topics in High-Dimensional Probability","TTh 9-10:20a","M. Gordin"],["ARAB1990","ARAB","1990","Special Topics in Arabic Language, Literature, and Culture","TBA","E. Belmont Flores"],["ARCH0520","ARCH","0520","Roman Archaeology and Art","MWF 1-1:50p","C. Rice"],["ARCH0530","ARCH","0530","Hannibal ad Portas! Fact and Fiction on Carthage and the Punic World","MWF 2-2:50p","P. Van Dommelen"],["ARCH0730","ARCH","0730","The Secrets of Ancient Bones: Discovering Ancient DNA","MWF 12-12:50p","V. Moses"],["ARCH1517","ARCH","1517","Growing Up Ancient: Childhood, Gender, and Identity in the Ancient World","MWF 1-1:50p","M. Krause"],["ARCH1765","ARCH","1765","Pandemics, Pathogens, and Plagues in the Greek and Roman Worlds","TTh 9-10:20a","T. Franconi"],["ARCH1772","ARCH","1772","The Human Skeleton","MWF 11-11:50a","M. Krause"],["ARCH1863","ARCH","1863","12,000 Years of Farming: From Domestication to Globalization","TTh 1-2:20p","L. Castellano"],["ASYR1100","ASYR","1100","Imagining the Gods: Myths and Myth-making in Ancient Mesopotamia","TTh 10:30-11:50a","M. Rutz"],["ASYR1725","ASYR","1725","Scientific Thought in Ancient Iraq","TTh 2:30-3:50p","J. Steele"],["BHBR0200","BHBR","0200","Readings in Biblical Hebrew","TTh 9-10:20a","T. Gilmartin"],["BIOL0080","BIOL","0080","Biotechnology Management","T 4-6:30p","B. Bready"],["BIOL0100","BIOL","0100","Living Biology at Brown and Beyond","W 3-5:30p","K. Monteiro"],["BIOL0280","BIOL","0280","Biochemistry","TTh 1-2:20p","Team"],["BIOL0420","BIOL","0420","Principles of Ecology","TTh 9-10:20a","Team"],["BIOL0500","BIOL","0500","Cell and Molecular Biology","MW 3-4:20p","Team"],["BIOL0510","BIOL","0510","Introductory Microbiology","MW 3-4:20p","A. Dugan"],["BIOL0610","BIOL","0610","Modeling Human Disease Using Stem Cells","WF 1-4p","C. Toth"],["BIOL0620","BIOL","0620","Fermentation to Publication: Experimental Food Microbiology","TTh 12-2:20p","P. Belenky"],["BIOL0800","BIOL","0800","Principles of Physiology","TTh 10:30-11:50a","Stein/Achilli"],["BIOL1040","BIOL","1040","Bioimaging","M 2-5p","G. Williams"],["BIOL1250","BIOL","1250","Host-microbiome Interactions in Health and Disease","Th 2-4:30p","S. Vaishnava"],["BIOL1295","BIOL","1295","Fundamentals of Cancer Immunotherapy","MW 3-4:20p","S. Lawler"],["BIOL1330","BIOL","1330","Biology of Reproduction","M 3-5:30p","G. Wessel"],["BIOL1435","BIOL","1435","Computational Methods for Studying Demographic History with Molecular Data","TTh 10:30-11:50a","E. Huerta-Sanchez"],["BIOL1530","BIOL","1530","Emergency Medical Systems: An Anatomy of Critical Performance","W 3-5:30p","Becker/Pulvino"],["BIOL1540","BIOL","1540","Molecular Genetics","TTh 2:30-3:50p","Y. Huang"],["BIOL1550","BIOL","1550","Parasitism: Biology and Disease","MWF 11-11:50a","C. de Graffenried"],["BIOL1555","BIOL","1555","Methods in Informatics and Data Science for Health","M 3-5:30p","Chen/Sarkar"],["BIOL1580","BIOL","1580","Metabolism Across Biological Scales: Integrative Physiology and Pathobiology","TTh 2:30-3:50p","K. Chellappa"],["BIOL1595","BIOL","1595","Artificial Intelligence in Health Care","W 3-5:30p","N. Sarkar"],["BIOL1600","BIOL","1600","Development of Vaccines to Infectious Diseases","MW 3-4:20p","L. Beura"],["BIOL1610","BIOL","1610","Experimental Neurobiology","W 1-6p","J. Stein"],["BIOL1810","BIOL","1810","21st Century Applications in Cell and Molecular Biology","MWF 10-10:50a","M. Dawson"],["BIOL1840","BIOL","1840","Epigenetics in Health and Disease","Th 4-6:30p","M. Martinez Moreno"],["BIOL1865","BIOL","1865","Toxicology","TTh 1-2:20p","D. Spade"],["ARTS1011","ARTS","1011","Acting for the Camera","M 3-5:30p","K. Burton"],["ARTS1017","ARTS","1017","How to Tell the Truth: Documentary Screenwriting","T 9-11:30a","L. Ellis"],["ARTS1018","ARTS","1018","People Falling Together and Apart: Writing Romantic Screenplays","Th 9-11:30a","L. Ellis"],["CATL1910","CATL","1910","Independent Study in Catalan","TBA","TBD"],["CHEM0400","CHEM","0400","Biophysical and Bioinorganic Chemistry","TTh 10:30-11:50a","C. Rose-Petruck"],["CHEM0500","CHEM","0500","Inorganic Chemistry","MWF 11-11:50a","E. Kim"],["CHEM0981","CHEM","0981","Undergraduate Research - Writing Designated","TBA","TBD"],["CHEM0986","CHEM","0986","From Molecules to Masterpieces: Chemistry's Influence on Culture and Art","W 3-5:30p","L. Wang"],["CHEM1150","CHEM","1150","Physical Chemistry: Thermodynamics and Statistical Mechanics","MWF 10-10:50a","R. Stratt"],["CHEM1230","CHEM","1230","Chemical Biology","TTh 2:30-3:50p","M. Kizer"],["CHEM1450","CHEM","1450","Advanced Organic Chemistry","MW 8:30-9:50a","A. Basu"],["CHEM1560K","CHEM","1560K","Computational Chemistry","TTh 1-2:20p","M. Coley-O'Rourke"],["CHEM1560P","CHEM","1560P","Applications of Modern Physical Methods in Synthesis","MW 3-4:20p","J. Robinson"],["CHIN0600","CHIN","0600","Advanced Modern Chinese I","MTWThF 12-12:50p","Team"],["CHIN0914","CHIN","0914","Environment, Food, and Health in China","TTh 2:30-3:50p","L. Su"],["CHIN1010","CHIN","1010","Stories from the Chinese Empire: Scholars, Demons and Swindlers","W 3-5:30p","K. Chen"],["CHIN1040","CHIN","1040","Modern Chinese Literature","Th 4-6:30p","L. Wang"],["CLAS0010","CLAS","0010","The Ancient Greeks","MWF 12-12:50p","S. Kidd"],["CPSY0100","CPSY","0100","Learning and Conditioning","MWF 1-1:50p","R. Colwill"],["CPSY0220","CPSY","0220","Making Decisions","MWF 2-2:50p","D. Levari"],["CPSY0400","CPSY","0400","Cognitive Neuroscience","MWF 2-2:50p","S. Favila"],["CPSY0610","CPSY","0610","Children's Thinking: The Nature of Cognitive Development","TTh 9-10:20a","D. Buchsbaum"],["CPSY0900","CPSY","0900","Statistical Methods","MWF 12-12:50p","J. Trost"],["CPSY0950","CPSY","0950","Introduction to programming","MW 3-4:20p","D. Linsley"],["CPSY1280B","CPSY","1280B","Special Topics in Cognition: Collective Cognition and Collective Behavior","M 3-5:30p","Sloman/Warren"],["CPSY1492","CPSY","1492","Computational Cognitive Neuroscience","TTh 10:30-11:50a","M. Frank"],["CPSY1560","CPSY","1560","Visually-Guided Action and Cognitive Processes","T 4-6:30p","J. Song"],["CPSY1570","CPSY","1570","Perceptual Learning","F 3-5:30p","T. Watanabe"],["CPSY1591","CPSY","1591","3D Vision Laboratory","TTh 1-2:20p","F. Domini"],["CPSY1680H","CPSY","1680H","The Developmental Origins of Cooperation","T 4-6:30p","J. Marshall"],["CPSY1730","CPSY","1730","Psychology in Business and Economics","TTh 9-10:20a","J. Krueger"],["CPSY1770","CPSY","1770","Stigma and Prejudice","MW 8:30-9:50a","J. Okonofua"],["CPSY1860","CPSY","1860","Logic in Language and Thought","Th 4-6:30p","R. Feiman"],["CPSY1900","CPSY","1900","Research Methods And Design","TTh 1-2:20p","A. Simmons"],["CPSY1950","CPSY","1950","Deep Learning in Brains, Minds and Machines","TTh 2:30-3:50p","T. Serre"],["COLT0710N","COLT","0710N","A Comparative Introduction to the Literatures of the Americas","TTh 1-2:20p","L. Valente"],["COLT0710Z","COLT","0710Z","Comedy from Athens to Hollywood","MWF 9-9:50a","M. Ierulli"],["COLT0711L","COLT","0711L","The Quran and its Readers","TTh 10:30-11:50a","E. Muhanna"],["COLT0711V","COLT","0711V","Lover, Mother, Warrior: Women in Premodern Indian Literature","T 4-6:30p","N. Kanchan"],["COLT0810I","COLT","0810I","Tales and Talemakers of the Non-Western World","MWF 10-10:50a","D. Levy"],["COLT0811Z","COLT","0811Z","Islands in the Western Imaginary: Paradise, Periphery, Prison","TTh 9-10:20a","V. Calotychos"],["COLT0812Z","COLT","0812Z","From Cuneiform to Klingon: Writing Systems and the Worlds They Make","TTh 2:30-3:50p","J. Freeman"],["COLT0813A","COLT","0813A","The Environment in Modern Arabic Literature","MW 1-2:20p","D. Nasser"],["CSCI0081","CSCI","0081","TA Apprenticeship: Full Credit","TBA","K. Fisler"],["CSCI0082","CSCI","0082","TA Apprenticeship: Half Credit","TBA","K. Fisler"],["CSCI0300","CSCI","0300","Fundamentals of Computer Systems","TTh 1-2:20p","Raghavan/Schwarzkopf"],["CSCI1302","CSCI","1302","Sociotechnical Approaches to AI and HCI","TTh 10:30-11:50a","D. Freed"],["CSCI1377","CSCI","1377","Tools for Thought","TTh 10:30-11:50a","W. Crichton"],["CSCI1380","CSCI","1380","Distributed Computer Systems","TTh 10:30-11:50a","N. Vasilakis"],["CSCI1385","CSCI","1385","Distributed Systems Laboratory","TBA","N. Vasilakis"],["CSCI1411","CSCI","1411","Foundations of AI and Machine Learning","MWF 1-1:50p","S. Booth"],["CSCI1420","CSCI","1420","Machine Learning","TTh 2:30-3:50p","S. Bach"],["CSCI1460","CSCI","1460","Computational Linguistics","TTh 2:30-3:50p","E. Pavlick"],["CSCI1470","CSCI","1470","Deep Learning","MWF 12-12:50p","R. Balestriero"],["CSCI1820","CSCI","1820","Algorithmic Foundations of Computational Biology","TTh 2:30-3:50p","S. Istrail"],["CSCI1851","CSCI","1851","Machine Learning for Biology and Health","TTh 10:30-11:50a","R. Singh"],["CSCI1880","CSCI","1880","Introduction to Computer Security","Course offered online","V. Kemerlis"],["CSCI1950U","CSCI","1950U","Topics in 3D Game Engine Development","W 3-5:30p","D. Ritchie"],["CSCI1951T","CSCI","1951T","Surveying VR Data Visualization Software for Research","TTh 10:30-11:50a","D. Laidlaw"],["CSCI1952B","CSCI","1952B","Responsible Computer Science in Practice","MW 3-4:20p","J. Netter"],["CSCI1952D","CSCI","1952D","Intelligent Robotics","TTh 1-2:20p","G. Konidaris"],["CSCI1952Y","CSCI","1952Y","Computer Architecture","MWF 10-10:50a","M. Zizyte"],["CSCI1953B","CSCI","1953B","Special Topics in Computational Design and Fabrication","MW 9-10:20a","A. Schulz"],["COST0725","COST","0725","Psychedelics in Religion, Science, and Healing","TTh 10:30-11:50a","Team"],["COST1950","COST","1950","Senior Concentrators' Seminar","M 3-5:30p","L. Difiori"],["CZCH1000","CZCH","1000","Dimensions of Czech Animation: Contexts, Interpretations, and Dialogs with the East","W 3-5:30p","M. Fidler"],["DATA0200","DATA","0200","Data Science Fluency","TTh 1-2:20p","A. Guang"],["DATA1500","DATA","1500","Data Visualization & Narrative","Th 4-6:30p","R. Fischer-Baum"],["ERLY1970","ERLY","1970","Individual Study Project","TBA","TBD"],["ERLY1990","ERLY","1990","Thesis Preparation","TBA","TBD"],["EMOW1980","EMOW","1980","Independent Study in EMOW","TBA","T. Nummedal"],["EEPS0010","EEPS","0010","Face of the Earth","MWF 1-1:50p","Liang/Parman"],["EEPS0160M","EEPS","0160M","Natural Disasters","TTh 10:30-11:50a","C. Dalton"],["EEPS0160P","EEPS","0160P","From Human Migration to Solving Crimes: The World of Forensic Isotopes","TTh 10:30-11:50a","A. Saal"],["EEPS0230","EEPS","0230","Geochemistry: Earth and Planetary Materials and Processes","TTh 1-2:20p","E. Cooperdock"],["EEPS0240","EEPS","0240","Earth: Evolution of a Habitable Planet","MWF 11-11:50a","E. Hodgin"],["EEPS0360","EEPS","0360","Solving the Climate and Carbon Challenge","TTh 2:30-3:50p","Cobb/Di Lorenzo"],["EEPS0810","EEPS","0810","Planetary Geology","MWF 10-10:50a","S. Birch"],["EEPS0820","EEPS","0820","Dynamic Earth","TTh 2:30-3:50p","H. Lau"],["EEPS0850","EEPS","0850","Weather and Climate","TTh 10:30-11:50a","M. Hastings"],["EEPS1310","EEPS","1310","Global Water Cycle","MWF 10-10:50a","J. Lee"],["EEPS1320","EEPS","1320","Introduction to Geographic Information Systems for Environmental Applications","TTh 10:30-11:50a","S. Salap-Ayca"],["EEPS1330","EEPS","1330","Global Environmental Remote Sensing","TTh 10:30-11:50a","J. Mustard"],["EEPS1510","EEPS","1510","Dynamic Meteorology","TTh 1-2:20p","A. Lynch"],["EEPS1650","EEPS","1650","Earthquake Seismology","TTh 10:30-11:50a","K. Fischer"],["EEPS1700","EEPS","1700","Climate Modeling II","MWF 2-2:50p","C. Horvat"],["EEPS1720","EEPS","1720","Tackling Climate Change with Machine Learning","TTh 10:30-11:50a","K. Bergen"],["EEPS1820","EEPS","1820","Geophysical Fluid Dynamics: Rotating, Stratified Turbulence Edition","MWF 1-1:50p","B. Fox-Kemper"],["EEPS1870","EEPS","1870","Mass Spectrometry and Chromatography Techniques for Organic Analysis","TTh 2:30-3:50p","Y. Huang"],["EEPS1960Z","EEPS","1960Z","Physical Volcanology","MWF 11-11:50a","C. Huber"],["EAST0140","EAST","0140","Childhood and Culture in Japan","TTh 10:30-11:50a","S. Perry"],["EAST0303","EAST","0303","Literature, Science, and Technology in China","M 3-5:30p","K. Chen"],["EAST0307","EAST","0307","China Through the Lens: History, Cinema, and Critical Discourse","TTh 1-2:20p","L. Wang"],["EAST0309","EAST","0309","Courtesans, Concubines, and Wives: Gender Relations in Imperial China","TTh 10:30-11:50a","B. Bossler"],["EAST0406","EAST","0406","Foreign Bodies in Japan, 600–1600","M 3-5:30p","J. Niedermaier"],["ECON0110","ECON","0110","Principles of Economics","MWF 10-10:50a","R. Friedberg"],["ECON0170","ECON","0170","Essential Mathematics for Economics","MWF 1-1:50p","Y. Lin"],["ECON1090","ECON","1090","Introduction to Game Theory","MW 8:30-9:50a","G. de Clippel"],["ECON1110","ECON","1110","Intermediate Microeconomics","TTh 10:30-11:50a","P. Dal Bo"],["ECON1170","ECON","1170","Welfare Economics and Social Choice Theory","TTh 2:30-3:50p","R. Serrano"],["ECON1310","ECON","1310","Labor Economics","TTh 1-2:20p","K. Chay"],["ECON1330","ECON","1330","Gender and Development","T 4-6:30p","T. Chauhan"],["ECON1345","ECON","1345","Climate Change and the Commons","W 3-5:30p","M. Garcia Gonzalez"],["ECON1360","ECON","1360","Research Seminar in Health Economics","M 3-5:30p","K. Chay"],["ECON1410","ECON","1410","Urban Economics","MW 8:30-9:50a","M. Turner"],["ECON1430","ECON","1430","The Economics of Social Policy","TTh 2:30-3:50p","E. Oster"],["ECON1470","ECON","1470","Bargaining Theory and Applications","TTh 9-10:20a","J. Fanning"],["ECON1540","ECON","1540","International Trade","TTh 10:30-11:50a","K. Forrester"],["ECON1550","ECON","1550","International Finance","MWF 2-2:50p","F. Duarte"],["ECON1560","ECON","1560","Economic Growth","TTh 1-2:20p","D. Weil"],["ECON1720","ECON","1720","Corporate Finance","TTh 9-10:20a","B. Gibbs"],["ECON1770","ECON","1770","Crisis Economics","TTh 2:30-3:50p","S. Kwon"],["ECON1805","ECON","1805","Experimental and Behavioral Economics","TTh 2:30-3:50p","K. Rozen"],["ECON1830","ECON","1830","Behavioral Finance","TTh 9-10:20a","R. La Porta"],["ECON1960","ECON","1960","Honors Tutorial for Economics Majors","TBA","N. Thakral"],["EDUC0120","EDUC","0120","K-12 Education Systems and Climate Change","MWF 1-1:50p","M. Kraft"],["EDUC0300","EDUC","0300","Introduction to Education and Society: Foundations of Opportunity and Inequality","MWF 10-10:50a","Flores/Chaney"],["EDUC0515","EDUC","0515","Teaching LGBTQIA History","Th 4-6:30p","J. Palella"],["EDUC0620","EDUC","0620","Cradle of Inequality: The Role of Families, Schools, and Neighborhoods","M 3-5:30p","D. Rangel"],["EDUC0830","EDUC","0830","Sociology of Education","TTh 1-2:20p","D. Rangel"],["EDUC0890","EDUC","0890","E pluribus unum: English and Engaged Citizenship in the United States","MWF 9-9:50a","T. Kelly"],["EDUC1185","EDUC","1185","Developmental and Educational Journeys of Students in Immigrant Families","T 4-6:30p","Y. Yamamoto"],["EDUC1240","EDUC","1240","Using Qualitative Research Methods","Th 4-6:30p","I. Gil"],["EDUC1289","EDUC","1289","Cross-Cultural Perspectives on Child Development","MWF 11-11:50a","J. Li"],["EDUC1350","EDUC","1350","Education as Freedom?: Educational Access and Immigration Activism in the US South","MWF 2-2:50p","Flores/Escudero"],["EDUC1475","EDUC","1475","The Big IDEA: The Complexities of Gifted and Special Education","TTh 10:30-11:50a","C. Cleveland"],["EDUC1485","EDUC","1485","AI & Education: Critical and Applied Perspectives","T 4-6:30p","T. Kalaitzidis"],["EDUC1675","EDUC","1675","The Psychology of Teaching and Learning","W 3-5:30p","K. Rieser"],["EDUC1775","EDUC","1775","Education for the Future: Innovation, Entrepreneurship, and Scale","F 3-5:30p","S. Gupta"],["EGYT1320","EGYT","1320","Introduction to Classical Hieroglyphic Egyptian Writing and Language (Middle Egyptian II)","MWF 10-10:50a","J. Saade Saade"],["EGYT1430","EGYT","1430","Pyramids, Power, Propaganda: Ancient Egyptian History to 1300 BCE","MWF 11-11:50a","L. Bestock"],["ENGN0061","ENGN","0061","Undergraduate Teaching Assistant Apprenticeship: Full Credit","TBA","G. Palmore"],["ENGN0062","ENGN","0062","Undergraduate Teaching Assistant Apprenticeship: Half Credit","TBA","G. Palmore"],["ENGN0120","ENGN","0120","Crossing the Chasm by Engineering Design and Strategy","MWF 12-12:50p","R. Fleeter"],["ENGN0250","ENGN","0250","Biomedical Engineering Design and Innovation II","Th 4-6:30p","Team"],["ENGN0620","ENGN","0620","Design Brief","WF 9:30-11:50a","Harris/Manfredi"],["ENGN0900","ENGN","0900","Managerial Decision Making","TTh 10:30-11:50a","T. Chaltas"],["ENGN1001","ENGN","1001","Projects in Engineering Design II","M 3-5:30p","I. Gonsher"],["ENGN1100","ENGN","1100","Numerical Methods in Chemical Engineering","TTh 9-10:20a","A. Peterson"],["ENGN1110","ENGN","1110","Transport and Biotransport Processes","MWF 2-2:50p","I. Wong"],["ENGN1140","ENGN","1140","Chemical Process Design","TTh 6:40-8p","D. Olson"],["ENGN1150","ENGN","1150","Environmental Engineering Design","TTh 6:40-8p","K. Pennell"],["ENGN1210","ENGN","1210","Biomechanics","TTh 2:30-3:50p","V. Srivastava"],["ENGN1220","ENGN","1220","Neuroengineering","TTh 1-2:20p","Nurmikko/Hochberg"],["ENGN1250","ENGN","1250","Biomedical Engineering Design and Innovation II","Th 4-6:30p","Team"],["ENGN1300","ENGN","1300","Structural Analysis","TTh 1-2:20p","Y. Bazilevs"],["ENGN1340","ENGN","1340","Water Supply and Treatment Systems - Technology and Sustainability","M 3-5:30p","K. Pennell"],["ENGN1370","ENGN","1370","Advanced Engineering Mechanics","W 3-5:30p","K. Kim"],["ENGN1420","ENGN","1420","Kinetics Processes in Materials Science and Engineering","TTh 10:30-11:50a","B. Sheldon"],["ENGN1500","ENGN","1500","Medical Image Analysis","W 3-5:30p","B. Kimia"],["ENGN1520","ENGN","1520","Cardiovascular Engineering","TTh 9-10:20a","K. Coulombe"],["ENGN1550","ENGN","1550","Recent Advances in Biomedical Engineering","TTh 10:30-11:50a","A. Shukla"],["ENGN1565","ENGN","1565","Physical and Physics Foundation of Computing","MWF 1-1:50p","J. Xu"],["ENGN1580","ENGN","1580","Communication Systems","TTh 1-2:20p","C. Rose"],["ENGN1590","ENGN","1590","Semiconductor Devices","MWF 12-12:50p","A. Zaslavsky"],["ENGN1595","ENGN","1595","Lasers and Nonlinear Optics","MWF 1-1:50p","D. Mittleman"],["ENGN1600","ENGN","1600","Design and Implementation of Digital Integrated Circuits","W 3-5:30p","M. Saligane"],["ENGN1620","ENGN","1620","Analysis and Design of Electronic Circuits","TTh 9-10:20a","J. Rosenstein"],["ENGN1640","ENGN","1640","Design of Computing Systems","TTh 10:30-11:50a","S. Reda"],["ENGN1670","ENGN","1670","Soft Matter","TTh 1-2:20p","T. Powers"],["ENGN1700","ENGN","1700","High Reynolds Number Flows","MWF 11-11:50a","M. Rodriguez"],["ENGN1710","ENGN","1710","Principles of Heat and Mass Transfer","TTh 1-2:20p","E. Suuberg"],["ENGN1740","ENGN","1740","Computer Aided Visualization and Design","T 7-9:30p","D. Bamford"],["ENGN1760","ENGN","1760","Design of Space Systems","MWF 1-1:50p","R. Fleeter"],["ENGN1820","ENGN","1820","Future of Work","T 4-6:30p","B. Ozkazanc-Pan"],["ENGN1931C","ENGN","1931C","Digital Nudges: Influencing Behavior in the Digital Age","T 12-2:30p","J. Duane"],["ENGN1932R","ENGN","1932R","Leadership in Organizations","M 3-5:30p","B. Ozkazanc-Pan"],["ENGL0150Y","ENGL","0150Y","Brontës and Brontëism","Th 4-6:30p","B. Parker"],["ENGL0202M","ENGL","0202M","(Un)Natural Histories: Observation, Exploration, and Knowledge","MWF 9-9:50a","B. Waite"],["ENGL0202N","ENGL","0202N","Ghosts of Colonialisms Past – The Uncanny and the Postcolonial","MWF 12-12:50p","A. Chatterjee"],["ENGL0202P","ENGL","0202P","Poetics of the Cosmos: Verse, Universe, and Existence","MWF 9-9:50a","M. Robinson"],["ENGL0300P","ENGL","0300P","Dreams","TTh 1-2:20p","M. Min"],["ENGL0310R","ENGL","0310R","Cavaliers, Kings, and Puritans: Poetry of the 17th Century","MWF 10-10:50a","C. Yates"],["ENGL0500T","ENGL","0500T","Blighted Faith: English Poetry 1830-1914","TTh 2:30-3:50p","B. Parker"],["ENGL0710Q","ENGL","0710Q","American Literature in the Era of Segregation","TTh 10:30-11:50a","R. Murray"],["ENGL0800R","ENGL","0800R","Reading Practices: An Introduction to Literary Theory","Th 4-6:30p","E. Rooney"],["ENGL0800T","ENGL","0800T","Introduction to Black Literary Theory","MWF 11-11:50a","K. Quashie"],["ENGL0900","ENGL","0900","Critical Reading and Writing I: The Academic Essay","TTh 6:40-8p","A. Jackson"],["ENGL1030J","ENGL","1030J","Editing Theory and Practice","Th 4-6:30p","E. Hipchen"],["ENGL1030L","ENGL","1030L","Writing at Three Miles an Hour","MWF 2-2:50p","L. Stanley"],["ENGL1050V","ENGL","1050V","Writing Wonder, Joy and Awe","MWF 12-12:50p","G. Talusan"],["ENGL1050X","ENGL","1050X","Making a Scene","MW 8:30-9:50a","E. Hipchen"],["ENGL1050Z","ENGL","1050Z","Audio/Video Storytelling","TTh 9-10:20a","N. Lake"],["ENGL1051A","ENGL","1051A","The Art of the Interview","TTh 1-2:20p","N. Lake"],["ENGL1180P","ENGL","1180P","Further Adventures in Creative Nonfiction","TTh 1-2:20p","E. Hardy"],["ENGL1181D","ENGL","1181D","Brown University Writers","TTh 10:30-11:50a","J. Readey"],["ENGL1190X","ENGL","1190X","Nonfiction Now","W 3-5:30p","G. Talusan"],["ENGL1190Z","ENGL","1190Z","The Art of Craft","TTh 2:30-3:50p","R. Ward"],["ENGL1191E","ENGL","1191E","Genre Bending","M 3-5:30p","E. Rush"],["ENGL1561I","ENGL","1561I","The Nineteenth-Century Novel","MWF 2-2:50p","M. Redfield"],["ENGL1561M","ENGL","1561M","American Literature and the Corporation","MWF 10-10:50a","D. Nabers"],["ENGL1562B","ENGL","1562B","Somebodies, Nobodies, and Other Others: 18th-Century Women's Writing","Th 4-6:30p","M. Rabb"],["ENGL1562Z","ENGL","1562Z","Queens: Hopkins and Phillips","M 3-5:30p","J. Khalip"],["ENGL1711E","ENGL","1711E","African American Literature After 1975","TTh 2:30-3:50p","R. Murray"],["ENGL1711V","ENGL","1711V","Everyday Ornaments: Feminist Poetics and Time","F 3-5:30p","A. Smailbegovic"],["ENGL1760E","ENGL","1760E","Who's Afraid of Virginia Woolf?","M 3-5:30p","R. Reichman"],["ENGL1761J","ENGL","1761J","Bad, Mad, and Sad: Literatures of Misbehaving Femmes","Th 4-6:30p","D. Ramirez"],["ENGL1762V","ENGL","1762V","Odysseys of Indenture: Literature and Archives of Global Asian Labor","MWF 11-11:50a","R. Liu"],["ENGL1762Y","ENGL","1762Y","South Asian Modernisms","M 3-5:30p","Gandhi/Chowdhury"],["ENGL1763A","ENGL","1763A","(Un)Belonging in African Women’s Writings","TTh 9-10:20a","O. Ajisebutu"],["ENGL1910F","ENGL","1910F","Working Fictions: Race, Gender, and Sexuality at Work","M 3-5:30p","R. Liu"],["ENGL1992","ENGL","1992","Senior Honors Thesis in English","TBA","D. Nabers"],["ENGL1994","ENGL","1994","Senior Honors Thesis in Nonfiction Writing","TBA","J. Readey"],["ENVS1107","ENVS","1107","Cartography and Geovisualization","TTh 2:30-3:50p","S. Salap-Ayca"],["ENVS1207","ENVS","1207","Eco-Entrepreneurship","T 4-6:30p","A. Nichols"],["ENVS1421","ENVS","1421","Podcasting For the Common Good: Storytelling with Science","W 3-5:30p","M. Hall"],["ENVS1547","ENVS","1547","Finance and the Environment","TTh 2:30-3:50p","Bayon/Tracy"],["ENVS1548","ENVS","1548","Values At Risk: Environmental Risk and Resilience in the Financial System","TTh 10:30-11:50a","Bayon/Tracy"],["ENVS1554","ENVS","1554","Farm Planet: Hunger, Development, and the Future of Food and Agriculture","MWF 1-1:50p","M. Schneider"],["ENVS1557","ENVS","1557","Birding Communities","TTh 6:40-8p","N. Jacobs"],["ENVS1601","ENVS","1601","Reimagining Climate Change","W 3-5:30p","M. Lennon"],["ENVS1711A","ENVS","1711A","Predicting the future","M 3-5:30p","R. Baker"],["ENVS1775","ENVS","1775","Biogeography","TTh 1-2:20p","D. Sax"],["ENVS1823","ENVS","1823","Climate Media, Discourse, and Power","TTh 9-10:20a","R. Wetts"],["ENVS1876","ENVS","1876","Entangled Worlds: The Art of the More-Than-Human Ethnography","T 4-6:30p","E. Freymann"],["ENVS1877","ENVS","1877","Colonialism and Global Environmental Inequality","Th 4-6:30p","A. Ramanujam"],["ETHN1200C","ETHN","1200C","Introduction to Asian American Studies","MWF 11-11:50a","K. Escudero"],["ETHN1750S","ETHN","1750S","Extravagant Texts: Reading the World Through Asian American Literature","TTh 10:30-11:50a","D. Kim"],["ETHN1900E","ETHN","1900E","Senior Seminar in Ethnic Studies","Th 4-6:30p","E. Hu-Dehart"],["FREN0200","FREN","0200","Basic French","MF 10-10:50a; TTh 10:30-11:50a","S. Ravillon"],["FREN0400","FREN","0400","Intermediate French II","MWF 10-10:50a","S. Gaillard"],["FREN0500","FREN","0500","Writing and Speaking French I","MWF 10-10:50a","S. Gaillard"],["FREN0600","FREN","0600","Writing and Speaking French II","MWF 10-10:50a","M. Alsahoui"],["FREN0950A","FREN","0950A","Advanced Written and Oral French: Traduction","MWF 11-11:50a","S. Ravillon"],["FREN0970B","FREN","0970B","Sociologies De Paris","TBA","C. Sanchez Boe"],["FREN1110H","FREN","1110H","Le Roman africain","TTh 2:30-3:50p","T. Ravindranathan"],["FREN1150G","FREN","1150G","New Wave Cinema from Paris to Hollywood","TTh 1-2:20p","D. Wills"],["FREN1210F","FREN","1210F","L’œuvre romanesque de Marguerite Duras","W 3-5:30p","D. Wills"],["FREN1310Z","FREN","1310Z","Figures de l’autre","T 4-6:20p","P. Folliet"],["FREN1710K","FREN","1710K","Frantz Fanon: Critical Theory and Decolonizing Practices between the Caribbean and (North) Africa","Th 4-6:30p","M. Amer Meziane"],["GNSS1101","GNSS","1101","A Gender Perspective on Women and Enterprise","M 3-5:30p","L. Scott"],["GNSS1210","GNSS","1210","U.S. AIDS + HIV Activism in History, Theory, and Art","TTh 1-2:20p","H. Sikk"],["GNSS1550","GNSS","1550","Queer Asias","W 3-5:30p","A. Wolff"],["GNSS1552","GNSS","1552","Human Nature: Theories, Narratives, Myths","TTh 2:30-3:50p","L. Forrester"],["GNSS1962I","GNSS","1962I","Gender, Violence, and the Art of Repair in the Americas","Th 4-6:30p","M. Palacio"],["GNSS1962J","GNSS","1962J","Trans Studies of Gender and Sexuality","T 4-6:30p","M. Stekl"],["GRMN1330C","GRMN","1330C","German Romanticism: Texts, Contexts, Legacies","TTh 1-2:20p","Z. Sng"],["GRMN1441Q","GRMN","1441Q","Fragen und Antworten","TTh 10:30-11:50a","T. Schestag"],["GRMN1703","GRMN","1703","Anti/formalisms Then and Now","T 4-6:30p","L. Silhol-Macher"],["GRMN1900K","GRMN","1900K","Bleibende Irritationen: Heinrich Heine und Deutschland","MWF 2-2:50p","T. Kniesche"],["GREK0110","GREK","0110","Intensive Introduction to Ancient Greek","MTWThF 9:30-10:20a","P. Walker"],["GREK0200","GREK","0200","Essentials of the Greek Language","MWF 9-9:50a","C. Kearns"],["GREK0400","GREK","0400","Introduction to Greek Literature","TTh 10:30-11:50a","M. Ziegler"],["GREK1082","GREK","1082","Readings in Athenian Oratory","TTh 10:30-11:50a","J. Hanink"],["GREK1111B","GREK","1111B","Polybius","MWF 11-11:50a","G. Oliver"],["GREK1820","GREK","1820","Greek Literature Survey after 450 BCE","MWF 10-10:50a","S. Kidd"],["GREK1990","GREK","1990","Conference: Especially for Honors Students","TBA","TBD"],["HEBR0200","HEBR","0200","Elementary Hebrew","MWF 1-1:50p; TTh 1-2:20p","R. Adler Ben Yehuda"],["HEBR0400","HEBR","0400","Intermediate Hebrew","MTWThF 12-12:50p","R. Adler Ben Yehuda"],["HNDI0200","HNDI","0200","Beginning Hindi or Urdu","MTWThF 12-12:50p","A. Koul"],["HNDI0400","HNDI","0400","Intermediate Hindi-Urdu","MWF 1-1:50p","A. Koul"],["HNDI1080","HNDI","1080","Advanced Hindi-Urdu","MWF 9-9:50a","A. Koul"],["HISP1371V","HISP","1371V","A Nation in its Labyrinth: An Introduction to Colombia","TTh 2:30-3:50p","F. Martinez-Pinzon"],["HIST0150J","HIST","0150J","The Ocean in Global History","TTh 10:30-11:50a","G. Rocha"],["HIST0150K","HIST","0150K","Curators, Hoarders, and Looters: The Long and Curious History of Collecting","MWF 1-1:50p","N. Safier"],["HIST0216","HIST","0216","Southeast Asian History","MWF 2-2:50p","A. Medrano"],["HIST0234","HIST","0234","Modern Latin America","MWF 11-11:50a","D. Rodriguez"],["HIST0252","HIST","0252","The American Civil War","MWF 9-9:50a","M. Vorenberg"],["HIST0256","HIST","0256","Introduction to Latinx History","TTh 10:30-11:50a","M. Ocegueda"],["HIST0576B","HIST","0576B","History of Artificial Intelligence","M 3-5:30p","H. Case"],["HIST0654A","HIST","0654A","Welfare States and a History of Modern Life","W 3-5:30p","R. Self"],["HIST0690F","HIST","0690F","Unnatural Disasters: Rethinking Histories of Catastrophe in the Americas","T 4-6:30p","P. Labat"],["HIST0691","HIST","0691","Indigenous Education","T 4-6:30p","T. Little"],["HIST0911A","HIST","0911A","Knowledge and Power: Material Culture History of Tibetan Buddhism during the Qing Dynasty 17-19th c","T 4-6:30p","T. Dongchung"],["HIST1156","HIST","1156","Postwar Japan","MWF 10-10:50a","K. Smith"],["HIST1210A","HIST","1210A","The Viking Age","MWF 2-2:50p","J. Conant"],["HIST1267","HIST","1267","The Global British Empire, 1600-The Present","MWF 1-1:50p","T. Bains"],["HIST1272E","HIST","1272E","Paris: Sacred and Profane, Imagined and Real","TTh 2:30-3:50p","C. Carroll"],["HIST1340","HIST","1340","History of the Andes","MWF 9-9:50a","J. Mumford"],["HIST1501","HIST","1501","The American Revolution","TTh 10:30-11:50a","Rockman/Gould"],["HIST1533","HIST","1533","Cities and Inequality Since 1920: The United States","MWF 12-12:50p","R. Self"],["HIST1571","HIST","1571","The Intellectual History of Black Women","TTh 1-2:20p","K. Blain"],["HIST1830M","HIST","1830M","From Medieval Bedlam to Prozac Nation: Intimate Histories of Psychiatry and Self","TTh 1-2:20p","J. Lambe"],["HIST1949A","HIST","1949A","Legal History: The Case of the Middle East","M 3-5:30p","F. Ahmed"],["HIST1956A","HIST","1956A","Thinking Historically: A History of History Writing","W 3-5:30p","K. Sacks"],["HIST1958E","HIST","1958E","On the Move: Problems and Histories of Tourism and Mobilities","Th 4-6:30p","A. Stark"],["HIST1960H","HIST","1960H","Indigeneity and Assimilation in Southern Africa: The Khoe-San","M 3-5:30p","N. Jacobs"],["HIST1960S","HIST","1960S","North African History: 1800 to Present","TTh 10:30-11:50a","J. Johnson"],["HIST1967C","HIST","1967C","Making Revolutionary Cuba, 1959-Present","M 3-5:30p","J. Lambe"],["HIST1968V","HIST","1968V","America and the Middle East: Histories of Connection and Exchange","Th 4-6:30p","F. Ahmed"],["HIST1969A","HIST","1969A","Israel-Palestine: Lands and Peoples I","W 3-5:30p","O. Bartov"],["HIST1970F","HIST","1970F","Early American and Atlantic Money","W 3-5:30p","A. Alterwaite"],["HIST1973K","HIST","1973K","Modern South Asia and the Image Archive","T 6-8:20p","V. Zamindar"],["HIST1973Q","HIST","1973Q","Environmental Pressures of South Asia","Th 4-6:30p","A. Majumdar"],["HIST1976F","HIST","1976F","Modern Environmental Movements from Conservation to the Rights of Nature","M 3-5:30p","B. Demuth"],["HIST1976U","HIST","1976U","Planning the Family","W 3-5:30p","J. Johnson"],["HIST1978F","HIST","1978F","Climates of Inequality: The Plantation-to-Petrochemical Complex","Th 4-6:30p","L. Blackbird"],["HIST1978K","HIST","1978K","Worlds on the Move: Migration and Exchange Across Europe and the Mediterranean, 1492–1700","W 3-5:30p","T. Bernardi"],["HIST1978L","HIST","1978L","History of Healing, Medicine, Technology, and Global Health in Africa","T 4-6:30p","A. Adegbite"],["HIST1992","HIST","1992","History Honors Workshop for Prospective Thesis Writers","Th 4-6:30p","B. Hein"],["HIST1993","HIST","1993","History Honors Workshop for Thesis Writers, Part I","TTh 2:30-3:50p","B. Hein"],["HIST1994","HIST","1994","History Honors Workshop for Thesis Writers, Part II","TTh 2:30-3:50p","B. Hein"],["HIAA0130","HIAA","0130","Architectural Projection","MW 12-1:50p","J. Von Der Schulenburg"],["HIAA0150","HIAA","0150","Intermediate Architectural Design Studio","TTh 2:30-5:30p","C. Barton"],["HIAA1016","HIAA","1016","Museums and the Management of Mesoamerican Art","M 3-5:30p","C. Nuckols"],["HIAA1017","HIAA","1017","To Teach, Delight, and Stir the Soul: Theatricality and the Spectator in Early Modern Rome (1600-175","Th 4-6:30p","A. Maloney"],["HIAA1049","HIAA","1049","Art Criticism Workshop","M 12:30-3p","S. Rodney"],["HIAA1051","HIAA","1051","Codicology Compared","W 1-3:30p","G. Collaco"],["HIAA1070","HIAA","1070","Spanish Art in the Age of Empire","W 3-5:30p","L. Bass"],["HIAA1121","HIAA","1121","Buildings, Space, Power: Postcolonial and Decolonial Histories of the Built Environment","M 3-5:30p","I. Osayimwese"],["HIAA1122","HIAA","1122","The Art and Architecture of Brown University","Th 4-6:30p","D. Neumann"],["HIAA1880","HIAA","1880","Criticality and Modern Art","F 3-5:30p","L. Caplan"],["HMAN0900T","HMAN","0900T","Environment, Violence, Repair","T 4-6:30p","E. Tarak"],["HMAN1000B","HMAN","1000B","The Cogut Institute for the Humanities Research Seminar","T 11a-1p","A. Anderson"],["HMAN1977C","HMAN","1977C","We the People","W 3-5:30p","A. Russell"],["HMAN1977D","HMAN","1977D","Settler Colonial Cities: Indigenous Histories, Presents, and Futures","TTh 2:30-3:50p","P. Rubertone"],["HMAN1977S","HMAN","1977S","Bottom Ecologies: Blackness, Queerness, and the Environment","TTh 1-2:20p","C. Johnson"],["IAPA1001","IAPA","1001","Foundations of Development","TTh 1-2:20p","P. Heller"],["IAPA1003","IAPA","1003","Foundations of Security","TTh 10:30-11:50a","R. Pauly"],["IAPA1201E","IAPA","1201E","Nonprofit Organizations","M 3-5:30p","W. Allen"],["IAPA1500D","IAPA","1500D","Research Design and Methods","T 4-6:30p","D. Brancati"],["IAPA1700G","IAPA","1700G","Energy, Climate and Society","W 3-5:30p","M. Gherghina"],["IAPA1700I","IAPA","1700I","Contemporary Approaches to International Security Research","Th 4-6:30p","A. Kenealy"],["IAPA1700J","IAPA","1700J","Mexican Migration and US Immigration Policy","T 4-6:30p","S. O'Neill"],["IAPA1700K","IAPA","1700K","Public Opinion, Social Media, and Politics","T 4-6:30p","S. Bae"],["IAPA1700Q","IAPA","1700Q","Crime and Punishment in Global Perspective","W 3-5:30p","E. Salmon"],["IAPA1701U","IAPA","1701U","What Makes Policies Work?","M 3-5:30p","S. Moffitt"],["IAPA1702C","IAPA","1702C","Inequality and Social Mobility in America","T 4-6:30p","I. Solipa"],["IAPA1800B","IAPA","1800B","Urban Ethnography and Public Policy","Th 1-3:30p","N. Pangborn"],["IAPA1800D","IAPA","1800D","Introduction to Corporate Law and Public Policy","T 4-6:30p","A. Gabinet"],["IAPA1801I","IAPA","1801I","Human Rights and AI: Impacts, Risks, and Opportunities","T 3-5:30p","M. Saada Saar"],["IAPA1801J","IAPA","1801J","International Security Seminar: Dynamics of Great Power Rivalry","Th 4-6:30p","L. Goldstein"],["IAPA1801Y","IAPA","1801Y","The Politics of Regulation: Technology, Finance, and Climate Change","W 3-5:30p","J. Ziegler"],["IAPA1804A","IAPA","1804A","Iran and the Islamic Revolution","W 3-5:30p","S. Kinzer"],["IAPA1804M","IAPA","1804M","Overcoming Threats to Human Security","Th 4-6:30p","D. Polatty"],["IAPA1806","IAPA","1806","State and Nation Building in Communist and Post Communist Europe","T 4-6:30p","A. Levitas"],["IAPA1807","IAPA","1807","Politics of Reproductive Justice","Th 1-3:30p","P. Roychowdhury"],["IAPA1811","IAPA","1811","Contemporary Digital Policy and Politics","T 4-6:30p","T. Edgar"],["ITAL0105","ITAL","0105","Accelerated Elementary Italian","MTWTh 10:30-11:50a","C. Abbona-Sneider"],["ITAL0400","ITAL","0400","Intermediate Italian II","MWF 11-11:50a","C. Abbona-Sneider"],["ITAL0600","ITAL","0600","Advanced Italian II","TTh 1-2:20p","C. Abbona-Sneider"],["ITAL0821","ITAL","0821","Opera: Italy Onstage and Backstage","TTh 10:30-11:50a","Rose/Battioni"],["ITAL0991","ITAL","0991","Intensive Language and Culture Proseminar","TBA","A. Digirolamo"],["ITAL1102","ITAL","1102","Cinema Neorealista Italiano","F 3-5:30p","L. Odello"],["ITAL1320","ITAL","1320","Great Authors and Works of Italian Renaissance: Ariosto’s Orlando furioso","T 4-6:30p","R. Martinez"],["ITAL1800","ITAL","1800","Cultures of Fascism","M 3-5:30p","S. Stewart-Steinberg"],["ITAL1920","ITAL","1920","Independent Study Project (Undergraduate)","TBA","C. Abbona-Sneider"],["JUDS0609","JUDS","0609","American Jewish History from the Great Migration to the Contemporary Resurgence of Antisemitism","TTh 1-2:20p","R. Rojanski"],["JUDS0651","JUDS","0651","Race, Sexuality, and the Jews","M 3-5:30p","K. Galor"],["JUDS0902","JUDS","0902","History of the Holocaust","TTh 10:30-11:50a","A. Teller"],["JUDS0981","JUDS","0981","The Modern Jewish Peace Tradition: From Prophecy to Politics","W 3-5:30p","E. Weiss"],["JUDS1711","JUDS","1711","History of the State of Israel: 1948 to the Present","TTh 2:30-3:50p","R. Rojanski"],["KREA0450","KREA","0450","Intermediate Korean for Advanced Beginners","MWF 9:30-10:50a","H. Jung"],["KREA0600","KREA","0600","Advanced Korean","MWF 12-12:50p","H. Wang"],["KREA0912","KREA","0912","Business Korean","TTh 9-10:20a","H. Wang"],["KREA1090","KREA","1090","Translating Korean: Fiction, Poetry & Film","M 3-5:30p","S. Perry"],["LANG0710","LANG","0710","Protest and Dissidence in Iran","TTh 1-2:20p","M. Quay"],["LANG0800","LANG","0800","Theory and Practice of Intercultural Competence","W 3-5:30p","E. Ozdemir"],["LANG1900","LANG","1900","Independent Study in Languages","TBA","J. Sokolosky"],["LATN0110","LATN","0110","Intensive Introduction to Latin","MTWThF 9-9:50a","M. Danaher"],["LATN0200","LATN","0200","Essentials of the Latin Language","TTh 2:30-3:50p","K. Mansukhani"],["LATN0400","LATN","0400","Introduction to Latin Literature","MWF 2-2:50p","I. Levin"],["LATN1060G","LATN","1060G","Tacitus","TTh 1-2:20p","A. Scafuro"],["LATN1110F","LATN","1110F","Fortunatus","MWF 10-10:50a","J. Pucci"],["LATN1110M","LATN","1110M","Plautus","TTh 2:30-3:50p","A. Scafuro"],["LATN1150","LATN","1150","Latin Prose Composition","MWF 2-2:50p","J. Reed"],["LACA1900","LACA","1900","Research and Methodologies in Latin American and Caribbean Studies","T 4-6:30p","J. Coleta Da Silva"],["LING0100","LING","0100","Introduction to Linguistics","TTh 10:30-11:50a","P. Jacobson"],["LING0130","LING","0130","Playing with Words: The Linguistic Principles Behind Word Games and Puzzles","MWF 11-11:50a","S. AnderBois"],["LING0131","LING","0131","Constructed Languages","MWF 2-2:50p","P. Grishin"],["LING1140","LING","1140","Evolution of Human Language","MWF 1-1:50p","J. Benheim"],["LING1312","LING","1312","Morphology","MWF 12-12:50p","P. Grishin"],["LING1500","LING","1500","Sociolinguistics","MWF 10-10:50a","J. Benheim"],["LING1631","LING","1631","Bilingualism","TTh 1-2:20p","F. Kpogo"],["LITR0110E","LITR","0110E","Screenwriting I","M 3-5:30p","L. Colella"],["LITR0110H","LITR","0110H","Digital & Cross-Disciplinary Language Arts 1","W 5:40-8:10p","M. Morran"],["LITR0210A","LITR","0210A","Fiction Writing II","W 3-5:30p","L. Akinsiku"],["LITR0210H","LITR","0210H","Digital & Cross-Disciplinary Language Arts II","T 4-6:30p","D. Pham"],["LITR0610G","LITR","0610G","Lilith’s Brood: Weird Women’s Writing; Writing Weird Women","T 4-6:30p","A. Lewis-Meeks"],["LITR0610H","LITR","0610H","Place as Force: Worldbuilding in Realist Fiction","M 3-5:30p","J. Townsend"],["LITR0710","LITR","0710","Writers on Writing Seminar","Th 4-6:30p","J. Wang"],["LITR1010B","LITR","1010B","Advanced Poetry","M 3-5:30p","P. Nelson"],["LITR1010E","LITR","1010E","Advanced Screenwriting","T 4-6:30p","Eisendrath/Levin"],["LITR1110V","LITR","1110V","Script to Screen: Scene Work","M 10:30a-12:50p","L. Colella"],["LITR1110X","LITR","1110X","Generative Poetry Workshop","T 11:55a-2:25p","K. Dawes"],["LITR1152C","LITR","1152C","Writers-in-the-Community Training & Residencies","T 11:55a-2:25p","E. Sikelianos"],["LITR1152T","LITR","1152T","Memory’s Imagination","M 3-5:30p","L. Hunt"],["LITR1152Z","LITR","1152Z","Creative Process Workshop","W 10:25a-12:55p","T. Field"],["LITR1153D","LITR","1153D","Conjuring God","T 4-6:30p","L. Akinsiku"],["LITR1153F","LITR","1153F","Reading and Making with Large Language Models","W 3-5:30p","J. Cayley"],["LITR1153H","LITR","1153H","MICRO-UTOPIAS","T 4-6:30p","A. Codjoe"],["LITR1153I","LITR","1153I","Temporal Entanglements: Writing Historical Fiction","T 4-6:30p","T. Rose"],["LITR1153J","LITR","1153J","The Poetics of Mysticism","W 3-5:30p","J. Wang"],["LITR1153K","LITR","1153K","Microfiction","W 12-2:30p","J. Townsend"],["LITR1200","LITR","1200","Writers on Writing","Th 4-6:30p","C. Channer"],["MATH0081","MATH","0081","Math Teaching Fellows Program","TBA","Y. Hsu"],["MATH0090","MATH","0090","Single Variable Calculus, Part I","TTh 9-10:20a","Zenz/Hsu"],["MATH0100","MATH","0100","Single Variable Calculus, Part II","MWF 9-9:50a","Ulmer/Lin"],["MATH0180","MATH","0180","Multivariable Calculus","MWF 11-11:50a","D. Katz"],["MATH0420","MATH","0420","Introduction to Number Theory","MWF 2-2:50p","Z. Wei"],["MATH0540","MATH","0540","Linear Algebra With Theory","TTh 1-2:20p","P. Zenz"],["MATH1040","MATH","1040","Fundamental Problems of Geometry","MWF 2-2:50p","W. Lim"],["MATH1080","MATH","1080","Cryptography","MWF 9-9:50a","I. Vogt"],["MATH1120","MATH","1120","Partial Differential Equations","MWF 11-11:50a","B. Pausader"],["MATH1220","MATH","1220","Mathematical Statistics","MWF 1-1:50p","J. Holmer"],["MATH1540","MATH","1540","Topics in Abstract Algebra","MWF 11-11:50a","J. Silverman"],["MATH1640","MATH","1640","Real Analysis II","MWF 10-10:50a","C. Breiner"],["MATH1720","MATH","1720","Manifolds","TTh 2:30-3:50p","R. Schwartz"],["MDVL0360","MDVL","0360","The Body: Medieval Perspectives","M 3-5:30p","J. Conant"],["MES1172","MES","1172","Iranian Cinema: History, Aesthetics, and Politics","TTh 10:30-11:50a","M. Babadi"],["MES1401","MES","1401","Strange Powers: Energy in the Modern Middle East","W 3-5:30p","G. Young"],["MES1591","MES","1591","People & Ruins (Studio): Remapping Demolished Spaces & Narratives","TTh 1-2:20p","O. Switat"],["MES1971","MES","1971","Senior Honors Thesis","TBA","E. Muhanna"],["MCM1505Z","MCM","1505Z","Kiarostami: What is an Image?","W 3-5:30p","J. Copjec"],["MGRK0200","MGRK","0200","Introduction to Modern Greek","MW 1-2:20p","E. Amanatidou"],["MGRK0400","MGRK","0400","Intermediate Modern Greek","MW 10:30-11:50a","E. Amanatidou"],["MGRK0600","MGRK","0600","Advanced Modern Greek","TBA","E. Amanatidou"],["MGRK1800","MGRK","1800","In Other Words: Translating Greece","TBA","E. Amanatidou"],["MGRK1910","MGRK","1910","Special Topics in Modern Greek","TBA","E. Amanatidou"],["MUSC0070","MUSC","0070","1000 Years of Listening","TTh 10:30-11:50a","E. Dolan"],["MUSC0221A","MUSC","0221A","MEME Ensemble: The Rap Cypher & Freestyle Performance","W 12-2:30p","Q. Scott"],["MUSC0600","MUSC","0600","Chorus","MW 6:30-9p","S. Griffin"],["MUSC0610","MUSC","0610","Orchestra","TTh 7:15-9:45p","M. Seto"],["MUSC0620","MUSC","0620","Wind Symphony","MW 6-7:20p","K. Plouffe"],["MUSC0650","MUSC","0650","Javanese Gamelan","T 6-9p","M. Perlman"],["MUSC0670","MUSC","0670","Old-Time String Band","T 7-8:50p","Astrausky/Blount"],["MUSC0680","MUSC","0680","Chamber Music Performance","TBA","L. Finkel"],["MUSC0810","MUSC","0810","Applied Music Program: Instruction in Vocal or Instrumental Music: Keyboard","TBA","S. Abboud Ashkar"],["MUSC1030","MUSC","1030","Tonal Counterpoint","W 12:30-3p","A. Cheung"],["MUSC1040","MUSC","1040","Analysis of Romantic Musics","TTh 10:30-11:50a","I. Tan"],["MUSC1110","MUSC","1110","Seminar in Composition","Th 12-2:30p","L. Wang"],["MUSC1246","MUSC","1246","Music and Disability","TTh 9-10:20a","M. Kinney"],["MUSC1260","MUSC","1260","Advanced Audio Techniques","M 3-5:30p","J. Moses"],["MUSC1301","MUSC","1301","The Music Industry","TTh 10:30-11:50a","G. Allotey-Pappoe"],["MUSC1440","MUSC","1440","Advanced Rap Songwriting","W 12-2:30p","E. Lumumba-Kasongo"],["MUSC1500A","MUSC","1500A","The Genius of Bach","MW 10-11:20a","L. Jodry"],["MUSC1610","MUSC","1610","Beethoven: Work, Biography, and Afterlife","T 12-2:30p","S. Abboud Ashkar"],["MUSC1616","MUSC","1616","Jazz Composition Seminar","W 3-5:30p","T. Vollbrecht"],["MUSC1642","MUSC","1642","Text-to-Music: Writing for the Voice","TTh 10:30-11:50a","N. Bentz"],["MUSC1663","MUSC","1663","Women in Music","TTh 1-2:20p","L. Stokes"],["MUSC1710","MUSC","1710","Choral Conducting","W 3-5:30p","L. Jodry"],["MUSC1810","MUSC","1810","Applied Music Program: Instruction in Vocal or Instrumental Music: Keyboard","TBA","S. Abboud Ashkar"],["MUSC1936","MUSC","1936","Black Atlantic Musics in Rhode Island","TTh 2:30-3:50p","R. Erickson"],["NAIS1200","NAIS","1200","Dawnland Explorations: A Community-Engaged Survey of Native New England","F 3-5:30p","M. Scott"],["NAIS1900","NAIS","1900","Critical NAIS Capstone Course","Th 4-6:30p","M. Scott"],["NEUR0680","NEUR","0680","Introduction to Computational Neuroscience","MWF 11-11:50a","D. Sheinberg"],["NEUR1020","NEUR","1020","Principles of Neurobiology","TTh 9-10:20a","C. Aizenman"],["NEUR1510","NEUR","1510","Neurotechnology: Molecular Tools and Methods for Neurobiology","MW 10:30-11:50a","A. Abdelfattah"],["NEUR1540","NEUR","1540","Neurobiology of Learning and Memory","TTh 10:30-11:50a","M. Linden"],["NEUR1560","NEUR","1560","Developmental Neurobiology","W 3-5:30p","A. Jaworski"],["NEUR1570","NEUR","1570","The Non-Neuronal Brain","MWF 2-2:50p","S. Mayoral"],["NEUR1600","NEUR","1600","Experimental Neurobiology","W 1-6p","J. Stein"],["NEUR1660","NEUR","1660","Neural Computation in Learning and Decision-Making","TTh 2:30-3:50p","M. Nassar"],["NEUR1740","NEUR","1740","The Diseased Brain: Mechanisms of Neurological and Psychiatric Disorders","MW 8:30-9:50a","J. Fallon"],["NEUR1930L","NEUR","1930L","Neurobiology of Love","TTh 1-2:20p","M. Linden"],["NEUR1940B","NEUR","1940B","Deep Learning in Neuroethology","M 3-5:30p","J. Simmons"],["PRSN0200","PRSN","0200","Basic Persian","MWF 12-12:50p","M. Quay"],["PRSN0400","PRSN","0400","Intermediate Persian Language and Culture","MWF 11-11:50a","M. Quay"],["PHIL0010","PHIL","0010","The Place of Persons","MWF 2-2:50p","Team"],["PHIL0040","PHIL","0040","Critical Reasoning","MWF 1-1:50p","E. Guindon"],["PHIL0491","PHIL","0491","Ethical and Political Issues From George Orwell’s Essays and Novels","W 3-5:30p","F. Ackerman"],["PHIL0532","PHIL","0532","Consumer Ethics","MWF 2-2:50p","N. Heliotis"],["PHIL0590","PHIL","0590","Do the Right Thing: Value Theory for PPE (Philosophy, Politics and Economics)","TTh 9-10:20a","S. Gubler"],["PHIL0720","PHIL","0720","Social Epistemology","MWF 1-1:50p","K. Ramos"],["PHIL0990T","PHIL","0990T","Paradox and Infinity","Th 4-6:30p","J. Schechter"],["PHIL1155","PHIL","1155","Hellenistic Ethics","MWF 9-9:50a","E. Kress"],["PHIL1232","PHIL","1232","Kant's Critique of Judgment (Aesthetics and Teleology)","TTh 10:30-11:50a","B. Beizaei"],["PHIL1485","PHIL","1485","The Quantified Self","MWF 10-10:50a","J. Netter"],["PHIL1560","PHIL","1560","Philosophy of Law","MWF 1-1:50p","Team"],["PHIL1561","PHIL","1561","Are We Doomed? Ethics, Economics, and the Future","TTh 2:30-3:50p","R. Doody"],["PHIL1580","PHIL","1580","Philosophy of Sex","MWF 12-12:50p","Heck/Gilman"],["PHIL1593","PHIL","1593","Seminar on Bioethics Through Fiction: Disability, Illness, and Death","Th 4-6:30p","F. Ackerman"],["PHIL1610","PHIL","1610","Decision Theory: Foundations and Applications","TTh 2:30-3:50p","Dreier/Wang"],["PHIL1675","PHIL","1675","Set Theory","MWF 11-11:50a","E. Guindon"],["PHIL1735","PHIL","1735","Metaphysics","MWF 12-12:50p","A. Pautz"],["PHIL1770","PHIL","1770","Philosophy of Mind","MWF 10-10:50a","A. Pautz"],["PHIL1835","PHIL","1835","The Philosophy of AI","MWF 11-11:50a","Fleig-Goldstein/Costa Val Rodrigues"],["PHYS1100","PHYS","1100","General Relativity","TTh 9-10:20a","M. Spradlin"],["PHYS1170","PHYS","1170","Introduction to Nuclear and High Energy Physics","MWF 12-12:50p; M 12-1:40p","G. Landsberg"],["PHYS1250","PHYS","1250","Stellar Structure and the Interstellar Medium","MWF 1-1:50p","I. Dell'Antonio"],["PHYS1420","PHYS","1420","Quantum Mechanics B","MWF 9-9:50a","J. Roloff"],["PHYS1560","PHYS","1560","Modern Physics Laboratory","TTh 9-10:20a","U. Heintz"],["PHYS1590","PHYS","1590","Semiconductor Devices","MWF 12-12:50p","A. Zaslavsky"],["PHYS1595","PHYS","1595","Laser and Nonlinear Optics","MWF 1-1:50p","D. Mittleman"],["PHYS1600","PHYS","1600","Computational Physics","TTh 1-2:20p","A. Hui"],["PHYS1670","PHYS","1670","Soft Matter","TTh 1-2:20p","T. Powers"],["PHYS1970F","PHYS","1970F","Quantum Information","MWF 2-2:50p","A. Rosuel"],["PLSH0200","PLSH","0200","Introductory Polish","TBA","J. Lion"],["PLSH0400","PLSH","0400","Intermediate Polish","TBA","J. Lion"],["PLSH0600","PLSH","0600","Advanced Polish","TBA","J. Lion"],["POLS0820Y","POLS","0820Y","The Politics of Race and the Criminal Justice System","M 3-5:30p","Testa/Pruitt"],["POLS0920I","POLS","0920I","The Politics, Ethics, and Art of Corruption","T 4-6:30p","R. Weitz-Shapiro"],["POBS0630F","POBS","0630F","Women, Arts & Imagination in the Portuguese-Speaking World","TTh 2:30-3:50p","Sobral/Silva Fernandes"],["POBS1080","POBS","1080","Performing Brazil: Language, Theater, Culture","F 9-11:50a","P. Sobral"],["POBS1602A","POBS","1602A","Portugal: The Journey from \"Welcoming\" Policies to Anti-Immigration Mobilization","T 4-6:30p","T. Franca da Silva"],["PHP0650","PHP","0650","From Manufacturer to Patient: Why is the Cost of Prescription Drugs So Darn High?","TTh 4:40-6p","R. Aubert"],["PHP0700","PHP","0700","Global Public Health Interventions","TTh 2:30-3:50p","C. Spencer"],["PHP0720","PHP","0720","Public Health and the Environment","TTh 10:30-11:50a","N. Trivedi"],["PHP1100","PHP","1100","Comparative Health Care Systems","TTh 1-2:20p","I. Papanicolas"],["PHP1300","PHP","1300","Parenting Behaviors and Child Health","W 3-5:30p","T. von Ash"],["PHP1511","PHP","1511","Applied Regression Analysis","MW 8:30-9:50a","A. Murillo"],["PHP1551","PHP","1551","Substance Use Prevention, Treatment, & Policy","Th 1-3:30p","C. Murphy"],["PHP1610","PHP","1610","Tobacco, Disease and the Industry: cigs, e-cigs and more","W 5-7:30p","S. Colby"],["PHP1650","PHP","1650","Race, Racism and Health","M 3-5:30p","D. Grigsby"],["PHP1685","PHP","1685","Digital Innovations & Artificial Intelligence in Healthcare","MW 9-10:20a","A. Mehrotra"],["PHP1689","PHP","1689","Technology and Mental Health: Evidence, Ethics, and Innovation","W 3-5:30p","S. Sun"],["PHP1695","PHP","1695","Effective Communication in Networked Information Ecosystem","MW 9-10:20a","S. Friedhoff"],["PHP1725","PHP","1725","Rural Public Health","T 1-3:30p","E. Walker"],["PHP1730","PHP","1730","Climate Risks and Health Solutions","TTh 10:30-11:50a","A. Just"],["PHP1810","PHP","1810","Community-Engaged Research in Public Health","TTh 2:30-3:50p","A. Tovar"],["PHP1830","PHP","1830","Harm Reduction as Public Health","M 3-5:30p","A. Macmadu"],["PHP1854","PHP","1854","The Epidemiology and Control of Infectious Diseases","M 9-11:30a","J. Nuzzo"],["PHP1856","PHP","1856","A One Health Approach to Emerging Public Health Issues","M 1:15-3:45p","S. McBurney"],["PHP1895","PHP","1895","Mindfulness Epidemiology","M 3-5:30p","E. Loucks"],["PHP1950","PHP","1950","Adolescent and Young Adult Health","M 9:15-11:45a","T. Gladstone"],["PHP1964","PHP","1964","Cancer Epidemiology and Prevention","F 2-4:30p","T. Zheng"],["RELS0010","RELS","0010","Happiness and the Pursuit of the Good Life","TTh 2:30-3:50p","Team"],["RELS0012","RELS","0012","The Religious Lives of Everyday People","TTh 10:30-11:50a","Team"],["RELS0014","RELS","0014","Jesus","MWF 10-10:50a","Team"],["RELS0420","RELS","0420","Sacred Bodies","W 3-5:30p","S. Harvey"],["RELS0540","RELS","0540","Spirit Writing and Popular Religion in China","TTh 9-10:20a","Y. Luo"],["RELS0585","RELS","0585","Indian Cinema and Social Change","M 3-5:30p","Team"],["RELS0725","RELS","0725","Psychedelics in Religion, Science, and Healing","TTh 10:30-11:50a","Team"],["RELS0845","RELS","0845","Religious Freedom in America","TTh 1-2:20p","Vaca/Grasso"],["RELS1325E","RELS","1325E","Ecotheology in Ancient Christianity","TTh 1-2:20p","S. Harvey"],["RELS1380E","RELS","1380E","Critiques of Religion + Capitalism","T 4-6:30p","Hulsether/Onderwyzer Gold"],["RELS1390B","RELS","1390B","Conservative Thought: Religion, Politics, Ethics","M 3-5:30p","S. Bush"],["RELS1530B","RELS","1530B","Heresy and Orthodoxy in Islamic Thought","W 3-5:30p","N. Khalek"],["RELS1530J","RELS","1530J","The Problem of Evil","Th 4-6:30p","N. Khalek"],["RUSS0110","RUSS","0110","Intensive Russian","MWF 10-10:50a; MWF 12-12:50p; T 9-10:20a","L. deBenedette"],["RUSS0200","RUSS","0200","Introductory Russian","MTWThF 12-12:50p","L. deBenedette"],["RUSS0400","RUSS","0400","Intermediate Russian","MWF 11-11:50a; TTh 12-12:50p","L. deBenedette"],["RUSS1120","RUSS","1120","Special Topics in Russian Studies II: Advanced Reading and Conversation","TTh 6:40-8p","V. Richter"],["RUSS1260","RUSS","1260","Blackness in Russian Political and Cultural History","T 4-6:30p","C. Monet"],["RUSS1290","RUSS","1290","Russian Literature in Translation I: Pushkin to Dostoevsky","TTh 1-2:20p","V. Golstein"],["RUSS1340","RUSS","1340","The Russian Novel","TTh 2:30-3:50p","M. Oklot"],["RUSS1460","RUSS","1460","Totalitarian Art and Its Opponents","TTh 9-10:20a","M. Taroutina"],["RUSS1650","RUSS","1650","The Rise and Fall of the Russian and Soviet Avant-Garde","TTh 10:30-11:50a","M. Taroutina"],["RUSS1990","RUSS","1990","Media Cultures of the Russian 1990s","Th 4-6:30p","F. Fenghi"],["SANS0200","SANS","0200","Elementary Sanskrit II","MWF 1-1:50p","D. Buchta"],["STS1000","STS","1000","Introduction to Science, Technology and Society","TTh 10:30-11:50a","X. Chacko"],["STS1100","STS","1100","Botanizing Worlds","W 1-3:30p","X. Chacko"],["STS1700F","STS","1700F","Visualizing the Invisible: Art, Science and Observation","F 3-5:30p","B. Steinert"],["STS1970","STS","1970","Independent Study in Science and Society","TBA","L. Biggs"],["SOC0010","SOC","0010","Social Forces: An Introduction to Sociology","TTh 9-10:20a","C. Rea"],["SOC0300","SOC","0300","Organizations and Society","TTh 10:30-11:50a","R. Wetts"],["SOC0300K","SOC","0300K","Inequalities and Health","M 3-5:30p","S. Short"],["SOC0300N","SOC","0300N","Social Inequality: Change and Continuity in the U.S.","M 3-5:30p","E. Rauscher"],["SOC0310","SOC","0310","Community-Engaged Scholarship: Theory and Practice","W 3-5:30p","K. Thompson"],["SOC1020","SOC","1020","Methods of Social Research","MWF 11-11:50a","C. Spearin"],["SOC1100","SOC","1100","Introductory Statistics for Social Research","TTh 1-2:20p","H. Zhang"],["SOC1130","SOC","1130","Race, Migration and the American Color Line","MW 8:30-9:50a","L. Lopez Sanders"],["SOC1260","SOC","1260","Market Research in Public and Private Sectors","MWF 10-10:50a","C. Spearin"],["SOC1315","SOC","1315","Macro-Organizational Theory: Organizations in Social Context","TTh 2:30-3:50p","J. Diamond"],["SOC1320","SOC","1320","Progressive and Regressive Welfare States","TTh 6:40-8p","J. Pacewicz"],["SOC1871X","SOC","1871X","Comparative Urban Political Economy","Th 4-6:30p","J. Logan"],["SOC1900","SOC","1900","Religion, Christianity, and Spirituality","F 3-5:30p","S. Barnes"],["SOC1950","SOC","1950","Senior Seminar","MWF 1-1:50p","N. Gonzalez Van Cleve"],["SAST1970","SAST","1970","Independent Study","TBA","TBD"],["TAPS0030","TAPS","0030","Introduction to Acting and Directing","TTh 3-5:20p","K. Bennett"],["TAPS0100","TAPS","0100","Playwriting I","F 1-3:50p","J. La Bella"],["TAPS0200","TAPS","0200","Playwriting II","T 1-3:50p","S. Lyons Anthony"],["TAPS0220","TAPS","0220","Persuasive Communication","MW 9-11:50a","B. Tannenbaum"],["TAPS0230","TAPS","0230","Acting","MW 1-3:50p","C. Crawford"],["TAPS0250","TAPS","0250","Introduction to Technical Theatre and Production","MWF 10-11:50a","A. Eizenberg"],["TAPS0320","TAPS","0320","Dance Composition","MW 2-3:50p","M. Bach-Coulibaly"],["TAPS0350","TAPS","0350","Black Performance Theory","T 4-6:30p","M. Tallie"],["TAPS0800Q","TAPS","0800Q","On the Flesh: Queer and Trans Embodiments","MW 1-2:20p","M. Azar"],["TAPS0930A","TAPS","0930A","The Actor's Instrument: Voice and Speech","TTh 10a-12:20p","R. Gibel"],["TKSH0400","TKSH","0400","Intermediate Turkish II","MWF 10-10:50a","E. Ozdemir"],["UNIV0901","UNIV","0901","Learning Transfer: Integrating Sport, School, and Life","TTh 9-10:20a","Hendricks/Kuo"],["UNIV1003","UNIV","1003","Jerusalem: Jews, Christians, Muslims","W 3-5:30p","K. Galor"],["UNIV1801","UNIV","1801","Brown in Washington, D.C. Practicum","M 2-5p","J. Frelier"],["URBN0210","URBN","0210","The City: An Introduction to Urban Studies","TTh 1-2:20p","M. Goldman"],["URBN1250","URBN","1250","The Political Foundations of the City","TTh 9-10:20a","J. Pacewicz"],["URBN1290","URBN","1290","Race, Racism, and the Urban Environment","T 4-6:30p","M. Goldman"],["URBN1870T","URBN","1870T","Transportation: An Urban Planning Perspective","Th 4-6:30p","R. Azar"],["URBN1871F","URBN","1871F","Urban Ecologies: Forms, Flows and Futures","M 3-5:30p","S. Cohen"],["URBN1943","URBN","1943","The Real Estate Development Process: An Entrepreneurial Lens","T 4-6:30p","J. Cohen"],["VIET0200","VIET","0200","Beginning Vietnamese","MTWThF 12-12:50p","T. Tran"],["VIET0400","VIET","0400","Intermediate Vietnamese","MTWThF 1-1:50p","T. Tran"],["VISA0120","VISA","0120","Sound and Video Foundation","Th 9a-12:50p","O. England"],["VISA0130","VISA","0130","Sculpture Foundation","W 1-4:50p","D. Stupar"],["VISA0140","VISA","0140","Photography Foundation","F 10a-1:50p","O. England"],["VISA0150","VISA","0150","Digital 2D Foundation","TTh 1-2:50p","W. Gier"],["VISA0170","VISA","0170","Spatial Dynamics Foundations","W 1-4:50p","H. Metaferia"],["VISA1110","VISA","1110","Drawing","TTh 9-11:50a","K. Commodore"],["VISA1210G","VISA","1210G","Silkscreen","TTh 9a-12:50p","S. Koetter"],["VISA1250","VISA","1250","Art of the Book","MW 1-4:50p","S. Inacio"],["VISA1300","VISA","1300","Words in Painting","MW 1-3:50p","L. Tarentino"],["VISA1310","VISA","1310","Painting I","MW 9-11:50a","N. Carter"],["VISA1420","VISA","1420","Sculpture II: Conceptual Propositions","TTh 12-3:50p","P. Myoda"],["VISA1510","VISA","1510","Black and White Photography","TTh 9-11:50a","T. Ganz"],["VISA1520","VISA","1520","Digital Photography","MW 9-11:50a","R. Ross"],["VISA1530","VISA","1530","Digital Photo Bookbinding","TTh 1-3:50p","T. Ganz"],["VISA1620","VISA","1620","Performance Art: The Artist's Embodied Practice","T 1-5:50p","H. Metaferia"],["VISA1800P","VISA","1800P","Art/Work: Professional Practice for Visual Artists","W 3-6:50p","H. Bhandari"],["VISA1900","VISA","1900","Other Lives of Time","MW 1-4:50p","R. Ross"],["VISA1910","VISA","1910","Individual Study Project in the Practice of Art","TBA","L. Bostrom"]];
+const COURSES = COURSES_RAW.map(r => ({id:r[0],subject:r[1],num:r[2],title:r[3],time:r[4],instructor:r[5]}));
+</script>
+<script>
+// ============================================================
+// Helpers
+// ============================================================
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[ch]));
+}
+
+// Subject -> icon key. Every icon is drawn as self-contained inline SVG
+// (see ICON_PATHS / ICON_ALIAS below) so there's no external font or
+// network dependency — the mark always renders, matching the mock-up's
+// clean line-icon style instead of a missing-glyph square.
+const SUBJECT_ICON = {"AFRI":"earth-africa","AMST":"flag-usa","ANTH":"bone","APMA":"square-root-variable","ARAB":"language","ARCH":"landmark","ARTS":"clapperboard","ASYR":"scroll","BHBR":"torah","BIOL":"dna","CATL":"language","CHEM":"flask","CHIN":"language","CLAS":"landmark","COLT":"book-open","COST":"om","CPSY":"brain","CSCI":"laptop-code","CZCH":"language","DATA":"chart-line","EAST":"earth-asia","ECON":"sack-dollar","EDUC":"graduation-cap","EEPS":"mountain","EGYT":"ankh","EMOW":"hourglass","ENGL":"book","ENGN":"gears","ENVS":"leaf","ERLY":"scroll","ETHN":"users","FREN":"language","GNSS":"venus-mars","GREK":"landmark","GRMN":"language","HEBR":"language","HIAA":"drafting-compass","HISP":"language","HIST":"scroll","HMAN":"lightbulb","HNDI":"language","IAPA":"handshake","ITAL":"language","JUDS":"star-of-david","KREA":"language","LACA":"earth-americas","LANG":"language","LATN":"scroll","LING":"comments","LITR":"pen-nib","MATH":"calculator","MCM":"film","MDVL":"chess-rook","MES":"compass","MGRK":"landmark","MUSC":"music","NAIS":"feather","NEUR":"brain","PHIL":"scale-balanced","PHP":"staff-snake","PHYS":"atom","PLSH":"language","POBS":"language","POLS":"landmark-dome","PRSN":"language","RELS":"place-of-worship","RUSS":"language","SANS":"scroll","SAST":"gopuram","SIGN":"hands-asl-interpreting","SOC":"people-group","STS":"microscope","TAPS":"masks-theater","TKSH":"language","UNIV":"university","URBN":"city","VIET":"language","VISA":"palette"};
+
+// Every SUBJECT_ICON value above maps down to one of the drawn keys in
+// ICON_PATHS. Several conceptually-similar FA-style names (e.g. the three
+// "earth-*" globes, or "landmark"/"landmark-dome"/"university") share a
+// single drawing since they'd look identical at this size anyway.
+const ICON_ALIAS = {
+  "earth-africa":"globe","earth-asia":"globe","earth-americas":"globe",
+  "flag-usa":"flag","bone":"bone","square-root-variable":"radical",
+  "language":"speech","comments":"speech",
+  "landmark":"columns","landmark-dome":"columns","university":"columns",
+  "clapperboard":"clapper","film":"clapper",
+  "scroll":"scroll","torah":"scroll",
+  "dna":"dna","flask":"flask",
+  "book-open":"openbook","book":"openbook",
+  "om":"lotus","brain":"brain","lightbulb":"lotus",
+  "laptop-code":"laptop","chart-line":"trendline","sack-dollar":"moneybag",
+  "graduation-cap":"cap","mountain":"mountain","ankh":"ankh","hourglass":"hourglass",
+  "gears":"gear","leaf":"leaf",
+  "users":"people","people-group":"people",
+  "venus-mars":"gendersign",
+  "drafting-compass":"compassdraft","compass":"compassdraft",
+  "star-of-david":"star","pen-nib":"pen","calculator":"calc","chess-rook":"rook",
+  "music":"note","feather":"feather","scale-balanced":"scale","staff-snake":"caduceus",
+  "atom":"atom","place-of-worship":"temple","gopuram":"temple",
+  "hands-asl-interpreting":"hand","microscope":"microscope","masks-theater":"masks",
+  "city":"city","palette":"palette","handshake":"handshake"
+};
+
+// Drawn keys -> raw SVG child markup, viewBox 0 0 48 48. Simple stroke-based
+// line art (currentColor) so a single fill/stroke color per subject is all
+// that's needed to theme every icon.
+const ICON_PATHS = {
+  globe:'<circle cx="24" cy="24" r="18"/><ellipse cx="24" cy="24" rx="7" ry="18"/><line x1="6" y1="24" x2="42" y2="24"/><path d="M9 14h30M9 34h30"/>',
+  flag:'<line x1="10" y1="6" x2="10" y2="42"/><path d="M10 8 L36 8 L28 16 L36 24 L10 24 Z"/>',
+  bone:'<circle cx="13" cy="13" r="5"/><circle cx="13" cy="19" r="5"/><circle cx="35" cy="29" r="5"/><circle cx="35" cy="35" r="5"/><line x1="16" y1="16" x2="32" y2="32" stroke-width="7"/>',
+  radical:'<path d="M6 26 L11 34 L20 10 H42"/>',
+  speech:'<path d="M8 10h32a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H20l-8 7v-7h-4a3 3 0 0 1-3-3V13a3 3 0 0 1 3-3z"/><line x1="14" y1="18" x2="34" y2="18"/><line x1="14" y1="24" x2="28" y2="24"/>',
+  columns:'<path d="M6 18 L24 6 L42 18 Z"/><line x1="6" y1="18" x2="42" y2="18"/><line x1="10" y1="18" x2="10" y2="38"/><line x1="18" y1="18" x2="18" y2="38"/><line x1="30" y1="18" x2="30" y2="38"/><line x1="38" y1="18" x2="38" y2="38"/><line x1="6" y1="38" x2="42" y2="38"/>',
+  clapper:'<rect x="6" y="18" width="36" height="24" rx="2"/><path d="M6 18 L14 8 H40 L34 18 Z"/><line x1="14" y1="18" x2="20" y2="8"/><line x1="24" y1="18" x2="30" y2="8"/>',
+  scroll:'<path d="M10 10 v28 a4 4 0 0 0 4 4 h20 a4 4 0 0 0 4-4 v-4 h-6"/><path d="M10 10 a4 4 0 0 1 4-4 h20 a4 4 0 0 1 4 4 v18"/><line x1="14" y1="16" x2="30" y2="16"/><line x1="14" y1="22" x2="30" y2="22"/>',
+  dna:'<path d="M16 6 C16 14 32 14 32 22 C32 30 16 30 16 38"/><path d="M32 6 C32 14 16 14 16 22 C16 30 32 30 32 38"/><line x1="18" y1="10" x2="30" y2="10"/><line x1="17" y1="16" x2="31" y2="16"/><line x1="17" y1="28" x2="31" y2="28"/><line x1="18" y1="34" x2="30" y2="34"/>',
+  flask:'<path d="M20 6h8M22 6v12l-12 22a3 3 0 0 0 3 4h22a3 3 0 0 0 3-4L26 18V6"/><line x1="17" y1="28" x2="31" y2="28"/>',
+  openbook:'<path d="M24 12c-4-4-10-5-16-4v26c6-1 12 0 16 4c4-4 10-5 16-4V8c-6-1-12 0-16 4z"/><line x1="24" y1="12" x2="24" y2="38"/>',
+  lotus:'<circle cx="24" cy="30" r="4"/><path d="M24 26c0-8-8-10-8-18 4 2 8 6 8 10 0-4 4-8 8-10 0 8-8 10-8 18z"/>',
+  brain:'<path d="M18 8c-5 0-8 4-8 8-3 1-5 4-5 7 0 4 3 7 6 7-1 5 2 9 7 9 2 0 4-1 5-2 1 1 3 2 5 2 5 0 8-4 7-9 3 0 6-3 6-7 0-3-2-6-5-7 0-4-3-8-8-8-2 0-4 1-5 2-1-1-3-2-5-2z"/><line x1="24" y1="8" x2="24" y2="38"/>',
+  laptop:'<rect x="10" y="10" width="28" height="18" rx="2"/><path d="M6 34h36l-3 5H9z"/><path d="M18 16l-4 3 4 3M30 16l4 3-4 3M23 22l2-6"/>',
+  trendline:'<path d="M6 38h36M6 38V8"/><polyline points="10,30 18,20 26,26 40,10"/>',
+  moneybag:'<path d="M18 8h12l4 8H14z"/><path d="M14 16c-6 6-6 18 2 22h16c8-4 8-16 2-22"/><path d="M21 25c0-2 2-3 3-3s3 1 3 3-2 3-3 3-3 1-3 3 2 3 3 3 3-1 3-3"/><line x1="24" y1="20" x2="24" y2="34"/>',
+  cap:'<path d="M4 18l20-8 20 8-20 8z"/><path d="M14 22v9c0 3 5 6 10 6s10-3 10-6v-9"/><line x1="44" y1="18" x2="44" y2="30"/>',
+  mountain:'<path d="M4 38 L18 14 L26 26 L32 16 L44 38 Z"/><circle cx="14" cy="12" r="3"/>',
+  ankh:'<circle cx="24" cy="12" r="7"/><line x1="24" y1="19" x2="24" y2="42"/><line x1="12" y1="28" x2="36" y2="28"/>',
+  hourglass:'<path d="M12 6h24M12 42h24M14 6c0 10 8 12 10 12s10-2 10-12M14 42c0-10 8-12 10-12s10 2 10 12"/>',
+  gear:'<circle cx="24" cy="24" r="8"/><path d="M24 6v6M24 36v6M6 24h6M36 24h6M10.5 10.5l4.2 4.2M33.3 33.3l4.2 4.2M10.5 37.5l4.2-4.2M33.3 14.7l4.2-4.2"/>',
+  leaf:'<path d="M10 38C10 20 24 8 40 8c0 16-12 30-30 30z"/><line x1="10" y1="38" x2="30" y2="18"/>',
+  people:'<circle cx="16" cy="16" r="6"/><circle cx="33" cy="18" r="5"/><path d="M6 40c0-8 6-12 10-12s10 4 10 12"/><path d="M26 40c0-6 4-10 9-10s9 4 9 10"/>',
+  gendersign:'<circle cx="16" cy="28" r="8"/><line x1="16" y1="36" x2="16" y2="44"/><line x1="11" y1="40" x2="21" y2="40"/><circle cx="32" cy="16" r="8"/><line x1="38" y1="10" x2="44" y2="4"/><polyline points="38,4 44,4 44,10"/>',
+  compassdraft:'<circle cx="24" cy="10" r="3"/><path d="M24 13 L12 40 M24 13 L36 40"/><line x1="12" y1="40" x2="36" y2="40"/>',
+  star:'<path d="M24 8 L34 26 L14 26 Z"/><path d="M24 40 L14 22 L34 22 Z"/>',
+  pen:'<path d="M24 6 L38 20 L16 42 L8 44 L10 36 Z"/><line x1="24" y1="6" x2="10" y2="36"/><line x1="38" y1="20" x2="16" y2="42"/>',
+  calc:'<rect x="10" y="6" width="28" height="36" rx="3"/><line x1="14" y1="14" x2="34" y2="14"/><circle cx="16" cy="24" r="1.6"/><circle cx="24" cy="24" r="1.6"/><circle cx="32" cy="24" r="1.6"/><circle cx="16" cy="32" r="1.6"/><circle cx="24" cy="32" r="1.6"/><circle cx="32" cy="32" r="1.6"/>',
+  rook:'<path d="M14 8h4v4h4V8h4v4h4V8h4v8l-3 4v18h4v4H12v-4h4V20l-3-4z"/>',
+  note:'<circle cx="14" cy="36" r="5"/><circle cx="32" cy="32" r="5"/><path d="M19 36V10l18-4v26"/>',
+  feather:'<path d="M38 6C22 6 10 18 10 34c0 2 0 4 2 6l26-26c2-2 4-2 6-2z"/><line x1="12" y1="38" x2="38" y2="12"/>',
+  scale:'<line x1="24" y1="6" x2="24" y2="40"/><line x1="10" y1="14" x2="38" y2="14"/><path d="M10 14L4 26a6 6 0 0 0 12 0z"/><path d="M38 14l-6 12a6 6 0 0 0 12 0z"/><line x1="14" y1="42" x2="34" y2="42"/>',
+  caduceus:'<line x1="24" y1="6" x2="24" y2="42"/><path d="M24 12c-6 0-6 6 0 6s6 6 0 6-6 6 0 6"/><circle cx="24" cy="8" r="3"/>',
+  atom:'<circle cx="24" cy="24" r="3"/><ellipse cx="24" cy="24" rx="18" ry="7"/><ellipse cx="24" cy="24" rx="18" ry="7" transform="rotate(60 24 24)"/><ellipse cx="24" cy="24" rx="18" ry="7" transform="rotate(120 24 24)"/>',
+  temple:'<path d="M24 6l6 8h-12z"/><line x1="24" y1="14" x2="24" y2="18"/><path d="M8 42V22l16-10 16 10v20"/><line x1="8" y1="42" x2="40" y2="42"/><line x1="20" y1="42" x2="20" y2="30"/><line x1="28" y1="42" x2="28" y2="30"/>',
+  hand:'<path d="M16 40V20a3 3 0 0 1 6 0v6M22 26v-8a3 3 0 0 1 6 0v8M28 26v-6a3 3 0 0 1 6 0v10M16 30c-4 0-6 2-6 5 0 6 6 11 12 11h6c6 0 10-4 10-10v-6"/>',
+  microscope:'<path d="M18 40h16M22 40c-2-8 2-12 6-14"/><rect x="20" y="10" width="8" height="8" transform="rotate(-30 24 14)"/><line x1="14" y1="24" x2="24" y2="18"/><path d="M30 20a6 6 0 1 0-8 8"/>',
+  masks:'<circle cx="16" cy="20" r="10"/><path d="M10 25c2 2 4 2 6 0"/><circle cx="34" cy="26" r="10"/><path d="M28 22c2-2 4-2 6 0"/>',
+  city:'<rect x="6" y="20" width="10" height="20"/><rect x="19" y="10" width="10" height="30"/><rect x="32" y="16" width="10" height="24"/><line x1="4" y1="40" x2="44" y2="40"/>',
+  palette:'<path d="M24 6C13 6 6 14 6 24c0 6 4 10 9 10 2 0 3-1 3-3s-1-2-1-4 2-3 4-3h6c6 0 10-4 10-9C37 10 31 6 24 6z"/><circle cx="16" cy="20" r="2"/><circle cx="22" cy="14" r="2"/><circle cx="30" cy="16" r="2"/><circle cx="32" cy="24" r="2"/>',
+  handshake:'<path d="M4 22l8-6 6 4 6-4 8 6"/><path d="M12 20l10 10 4-4-8-8"/><path d="M36 20l-10 10-4-4 8-8"/>'
+};
+
+function svgIcon(key, color){
+  const body = ICON_PATHS[key];
+  if (!body) return '';
+  return `<svg viewBox="0 0 48 48" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}
+
+// Subject -> plain-language department name, shown on each card
+// instead of a bare four-letter code.
+const SUBJECT_NAME = {"AFRI":"Africana Studies","AMST":"American Studies","ANTH":"Anthropology","APMA":"Applied Mathematics","ARAB":"Arabic Studies","ARCH":"Archaeology & the Ancient World","ARTS":"Media Arts","ASYR":"Assyriology","BHBR":"Biblical Hebrew","BIOL":"Biology","CATL":"Catalan Studies","CHEM":"Chemistry","CHIN":"Chinese Studies","CLAS":"Classics","COLT":"Comparative Literature","COST":"Contemplative Studies","CPSY":"Cognitive & Psychological Sciences","CSCI":"Computer Science","CZCH":"Czech Studies","DATA":"Data Science","EAST":"East Asian Studies","ECON":"Economics","EDUC":"Education","EEPS":"Earth, Environmental & Planetary Sciences","EGYT":"Egyptology & Assyriology","EMOW":"Early Modern World","ENGL":"English","ENGN":"Engineering","ENVS":"Environmental Studies","ERLY":"Early Cultures","ETHN":"Ethnic Studies","FREN":"French Studies","GNSS":"Gender & Sexuality Studies","GREK":"Greek","GRMN":"German Studies","HEBR":"Hebrew","HIAA":"History of Art & Architecture","HISP":"Hispanic Studies","HIST":"History","HMAN":"Humanities","HNDI":"Hindi-Urdu","IAPA":"International & Public Affairs","ITAL":"Italian Studies","JUDS":"Judaic Studies","KREA":"Korean Studies","LACA":"Latin American & Caribbean Studies","LANG":"Language Studies","LATN":"Latin","LING":"Linguistics","LITR":"Literary Arts","MATH":"Mathematics","MCM":"Modern Culture & Media","MDVL":"Medieval Studies","MES":"Middle East Studies","MGRK":"Modern Greek","MUSC":"Music","NAIS":"Native American & Indigenous Studies","NEUR":"Neuroscience","PHIL":"Philosophy","PHP":"Public Health","PHYS":"Physics","PLSH":"Polish Studies","POBS":"Portuguese & Brazilian Studies","POLS":"Political Science","PRSN":"Persian","RELS":"Religious Studies","RUSS":"Russian Studies","SANS":"Sanskrit","SAST":"South Asian Studies","SIGN":"American Sign Language","SOC":"Sociology","STS":"Science, Technology & Society","TAPS":"Theatre Arts & Performance Studies","TKSH":"Turkish","UNIV":"University Courses","URBN":"Urban Studies","VIET":"Vietnamese","VISA":"Visual Art"};
+
+function plateColor(subject){
+  let h = 0;
+  for (let i = 0; i < subject.length; i++) h = (h * 31 + subject.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  return `hsl(${hue}, 55%, 34%)`;
+}
+
+function plateStyleFor(subject){
+  const faName = SUBJECT_ICON[subject];
+  const key = faName ? ICON_ALIAS[faName] : null;
+  const color = plateColor(subject);
+  return { svg: key ? svgIcon(key, color) : '', color };
+}
+
+async function withRetry(fn, retries = 1){
+  try { return await fn(); }
+  catch (e) {
+    if (retries > 0) { await new Promise(r => setTimeout(r, 150)); return withRetry(fn, retries - 1); }
+    throw e;
+  }
+}
+
+async function apiGet(path){
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  return res.json();
+}
+
+async function apiPost(path, body){
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `POST ${path} failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+function todayKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ============================================================
+// Match engine — state now mirrors what GET /api/state returns:
+// every course's rating + match count, plus running totals. Elo
+// itself is computed server-side (see the backend's Lua vote
+// script), so the client never does that math or trusts a locally
+// forged value — it only ever renders whatever the server returns.
+// The numeric rating is never displayed anywhere — only relative
+// rank, so a spam-voter gains a course visibility, never a public
+// score to game.
+// ============================================================
+const DEFAULT_ELO = 1500;
+const MIN_VOTE_INTERVAL_MS = 400; // client-side throttle against double/rapid submits
+
+function emptyState(){ return { rows: {}, totalVotes: 0, votesToday: 0 }; }
+function defaultRow(){ return [DEFAULT_ELO, 0]; }
+
+let state = emptyState();
+let storageOK = true;
+let current = [null, null];
+let lastPairKey = '';
+let voting = false;
+let lastVoteAt = 0;
+
+async function loadState(){
+  try {
+    const data = await withRetry(() => apiGet('/api/state'));
+    state = {
+      rows: (data && data.rows) || {},
+      totalVotes: typeof data?.totalVotes === 'number' ? data.totalVotes : 0,
+      votesToday: typeof data?.votesToday === 'number' ? data.votesToday : 0,
+    };
+    storageOK = true;
+  } catch (e) {
+    state = emptyState();
+    storageOK = false;
+  }
+  // Any course the backend hasn't seeded/voted on yet simply won't
+  // have a row — fill those in locally so rendering never has to
+  // special-case a missing entry.
+  for (const c of COURSES) {
+    if (!state.rows[c.id]) state.rows[c.id] = defaultRow();
+  }
+}
+
+// Reports the outcome to the backend, which computes the new Elo
+// atomically (see voteScript.js server-side) and returns the
+// authoritative result. No local read-modify-write anymore — the
+// server owns this entirely, closing the old client-trust hole.
+async function applyVote(winnerId, loserId){
+  try {
+    const result = await withRetry(() => apiPost('/api/vote', { winnerId, loserId }));
+    state.rows[winnerId] = [result.winner.elo, result.winner.matches];
+    state.rows[loserId]  = [result.loser.elo, result.loser.matches];
+    state.totalVotes = result.totalVotes;
+    state.votesToday += 1; // server tracks the authoritative count; this keeps today's number live between reloads
+    storageOK = true;
+  } catch (e) {
+    storageOK = false;
+  }
+}
+
+// ============================================================
+// Matchup picker — favors least-played courses so the whole
+// catalog converges evenly instead of a few courses hogging votes.
+// ============================================================
+function pickMatchup(){
+  const sorted = [...COURSES].sort((a,b) => state.rows[a.id][1] - state.rows[b.id][1]);
+  const pool = sorted.slice(0, Math.max(40, Math.floor(COURSES.length * 0.25)));
+  let a, b, tries = 0;
+  do {
+    a = pool[Math.floor(Math.random() * pool.length)];
+    const poolB = Math.random() < 0.6 ? pool : COURSES;
+    b = poolB[Math.floor(Math.random() * poolB.length)];
+    tries++;
+  } while ((a.id === b.id || `${a.id}|${b.id}` === lastPairKey) && tries < 25);
+  lastPairKey = `${a.id}|${b.id}`;
+  return [a, b];
+}
+
+// ============================================================
+// Rendering — vote view
+// ============================================================
+const arenaHost = document.getElementById('arenaHost');
+const statsStrip = document.getElementById('statsStrip');
+
+function courseCardHTML(course, side){
+  const p = plateStyleFor(course.subject);
+  const dept = SUBJECT_NAME[course.subject] || course.subject;
+  const instructor = course.instructor || 'Staff';
+  const meets = course.time || 'TBA';
+  return `
+    <div class="card" data-side="${side}" data-id="${escapeHtml(course.id)}" tabindex="0" role="button" aria-label="Pick ${escapeHtml(course.title)}">
+      <div class="plate">
+        ${p.svg ? `<div class="icon">${p.svg}</div>` : ''}
+        <div class="code">${escapeHtml(course.subject)} ${escapeHtml(course.num)}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title">${escapeHtml(course.title)}</div>
+        <div class="card-facts">
+          <span><b>Instructor:</b> ${escapeHtml(instructor)}</span>
+          <span><b>Time:</b> ${escapeHtml(meets)}</span>
+          <span><b>Dept:</b> ${escapeHtml(dept)}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderMatchup(){
+  current = pickMatchup();
+  arenaHost.classList.remove('loading');
+  arenaHost.className = 'arena';
+  arenaHost.innerHTML = `${courseCardHTML(current[0], 'a')}<div class="or-badge">or</div>${courseCardHTML(current[1], 'b')}`;
+  arenaHost.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', onVote);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onVote({currentTarget: card}); }
+    });
+  });
+  renderStats();
+}
+
+function renderStats(){
+  let played = 0;
+  for (const c of COURSES) if (state.rows[c.id][1] > 0) played++;
+  const votesToday = state.votesToday || 0;
+  const matchupNum = state.totalVotes + 1;
+  statsStrip.innerHTML = `
+    <div class="stat-cell"><span class="stat-num">#${matchupNum.toLocaleString()}</span><span class="stat-label">Matchup</span></div>
+    <div class="stat-cell"><span class="stat-num">${votesToday.toLocaleString()}</span><span class="stat-label">Votes Today</span></div>
+    <div class="stat-cell"><span class="stat-num">${state.totalVotes.toLocaleString()}</span><span class="stat-label">Total Votes</span></div>
+    <div class="stat-cell"><span class="stat-num">${played.toLocaleString()}/${COURSES.length}</span><span class="stat-label">Courses Ranked</span></div>
+  `;
+  document.getElementById('footMatchups').textContent = `${state.totalVotes.toLocaleString()} matchups`;
+  document.getElementById('footCourseCount').textContent = `${COURSES.length.toLocaleString()} courses`;
+  document.getElementById('footSync').textContent = storageOK ? 'live' : 'offline';
+}
+
+async function onVote(e){
+  const now = Date.now();
+  if (voting || now - lastVoteAt < MIN_VOTE_INTERVAL_MS) return;
+  voting = true;
+  lastVoteAt = now;
+  const side = e.currentTarget.dataset.side;
+  const winner = side === 'a' ? current[0] : current[1];
+  const loser  = side === 'a' ? current[1] : current[0];
+  arenaHost.querySelectorAll('.card').forEach(c => {
+    c.classList.add('disabled');
+    c.classList.add(c.dataset.id === winner.id ? 'winner' : 'loser');
+  });
+  await applyVote(winner.id, loser.id);
+  renderStats();
+  setTimeout(() => { voting = false; renderMatchup(); }, 450);
+}
+
+// ============================================================
+// Leaderboard — order is Elo-driven internally, but only the
+// rank position is ever shown; the numeric rating stays hidden.
+// ============================================================
+const boardHost = document.getElementById('boardHost');
+const boardNote = document.getElementById('boardNote');
+const boardSearch = document.getElementById('boardSearch');
+let boardRowsCache = [];
+let searchDebounce = null;
+
+function buildBoardRows(){
+  return COURSES.map(c => ({ c, elo: state.rows[c.id][0], m: state.rows[c.id][1] }))
+    .sort((x, y) => y.elo - x.elo);
+}
+
+function renderLeaderboard(filter = ''){
+  const q = filter.trim().toLowerCase();
+  const rows = boardRowsCache.filter(row => {
+    if (!q) return true;
+    const c = row.c;
+    const dept = SUBJECT_NAME[c.subject] || '';
+    return c.title.toLowerCase().includes(q) ||
+           c.subject.toLowerCase().includes(q) ||
+           dept.toLowerCase().includes(q) ||
+           c.instructor.toLowerCase().includes(q) ||
+           `${c.subject} ${c.num}`.toLowerCase().includes(q);
+  }).slice(0, 150);
+
+  if (rows.length === 0) {
+    boardHost.innerHTML = `<div class="empty">No courses match “${escapeHtml(filter)}.”</div>`;
+  } else {
+    boardHost.innerHTML = rows.map((row) => {
+      const rank = boardRowsCache.indexOf(row) + 1;
+      const rankClass = rank === 1 ? 'r1' : rank === 2 ? 'r2' : rank === 3 ? 'r3' : '';
+      return `
+        <div class="board-row">
+          <div class="rank ${rankClass}">${rank}</div>
+          <div>
+            <div class="btitle">${escapeHtml(row.c.title)}</div>
+            <div class="bsub">${escapeHtml(row.c.subject)} ${escapeHtml(row.c.num)} · ${escapeHtml(row.c.instructor || 'Staff')}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  const totalVotes = boardRowsCache.reduce((s, r) => s + r.m, 0) / 2;
+  boardNote.textContent = q
+    ? `Showing ${rows.length} match${rows.length===1?'':'es'} for "${filter}".`
+    : `Ranked by head-to-head votes. ${Math.round(totalVotes).toLocaleString()} matchups voted so far — the more votes, the more the order settles.`;
+}
+
+// debounced so fast typing doesn't re-render the list on every keystroke
+boardSearch.addEventListener('input', () => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => renderLeaderboard(boardSearch.value), 120);
+});
+
+// ============================================================
+// Tabs
+// ============================================================
+const tabVote = document.getElementById('tabVote');
+const tabBoard = document.getElementById('tabBoard');
+const voteView = document.getElementById('voteView');
+const boardView = document.getElementById('boardView');
+function showLeaderboard(){
+  tabBoard.classList.add('active'); tabVote.classList.remove('active');
+  voteView.style.display = 'none'; boardView.classList.add('active');
+  boardRowsCache = buildBoardRows();
+  renderLeaderboard(boardSearch.value);
+}
+tabVote.addEventListener('click', () => {
+  tabVote.classList.add('active'); tabBoard.classList.remove('active');
+  voteView.style.display = ''; boardView.classList.remove('active');
+});
+tabBoard.addEventListener('click', showLeaderboard);
+
+// ============================================================
+// Footer links: leaderboard jump + info dialogs
+// ============================================================
+document.getElementById('linkLeaderboard').addEventListener('click', showLeaderboard);
+
+function wireDialog(buttonId, dialogId){
+  const btn = document.getElementById(buttonId);
+  const dlg = document.getElementById(dialogId);
+  btn.addEventListener('click', () => dlg.showModal());
+  dlg.querySelectorAll('[data-close-dialog]').forEach(el => el.addEventListener('click', () => dlg.close()));
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); }); // click on backdrop
+}
+wireDialog('linkAbout', 'dlgAbout');
+wireDialog('linkMethodology', 'dlgMethodology');
+wireDialog('linkPrivacy', 'dlgPrivacy');
+
+// ============================================================
+// Boot
+// ============================================================
+let booted = false;
+(async function init(){
+  if (booted) return;
+  booted = true;
+  await loadState();
+  renderMatchup();
+})();
+</script>
+</body>
+</html>
